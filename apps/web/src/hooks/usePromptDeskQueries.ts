@@ -35,17 +35,29 @@ export function useProjectsQuery() {
   });
 }
 
-export function useItemsQuery(input: ItemsQueryInput = {}) {
+export function useWorktreesQuery() {
   return useQuery({
-    queryKey: promptDeskQueryKeys.items(input),
-    queryFn: () => promptDeskApi.items(input)
+    queryKey: promptDeskQueryKeys.worktrees(),
+    queryFn: () => promptDeskApi.worktrees()
   });
 }
 
-export function useCountsQuery(input: Pick<ItemsQueryInput, "tab" | "query" | "scopes" | "sessionState"> = {}) {
+export function useItemsQuery(input: ItemsQueryInput = {}, enabled = true) {
+  return useQuery({
+    queryKey: promptDeskQueryKeys.items(input),
+    queryFn: () => promptDeskApi.items(input),
+    enabled
+  });
+}
+
+export function useCountsQuery(
+  input: Pick<ItemsQueryInput, "tab" | "query" | "scopes" | "sessionState"> = {},
+  enabled = true
+) {
   return useQuery({
     queryKey: promptDeskQueryKeys.counts(input),
-    queryFn: () => promptDeskApi.counts(input)
+    queryFn: () => promptDeskApi.counts(input),
+    enabled
   });
 }
 

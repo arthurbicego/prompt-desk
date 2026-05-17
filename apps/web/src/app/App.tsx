@@ -15,6 +15,7 @@ import {
   useMcpServersQuery,
   useProjectsQuery,
   useTrashQuery,
+  useWorktreesQuery,
   useUpdatePreferencesMutation
 } from "../hooks";
 import { usePromptDeskEvents } from "../lib/events";
@@ -35,6 +36,7 @@ import {
 import { ConfigsMcpSection } from "../features/configs";
 import { SessionsReadOnlyPanel, codexItemToSessionRecord } from "../features/sessions";
 import { ActivityTrail } from "../features/activity";
+import { WorktreesPanel } from "../features/worktrees";
 import { i18n } from "../i18n";
 import { cn } from "../lib/utils";
 
@@ -152,6 +154,7 @@ function beginPanelResize({
 export function App() {
   const bootstrap = useBootstrapQuery();
   const projects = useProjectsQuery();
+  const worktrees = useWorktreesQuery();
   const updatePreferences = useUpdatePreferencesMutation();
   const events = usePromptDeskEvents();
   const queryClient = useQueryClient();
@@ -188,13 +191,14 @@ export function App() {
   );
   const projectRows = projects.data?.projects ?? bootstrap.data?.projects ?? [];
   const projectIds = useMemo(() => projectRows.map((project) => project.id), [projectRows]);
+  const isWorktreeTab = activeTab === "worktree";
   const selectedScopesForQuery = useMemo(
     () => normalizeProjectScopes(selectedScopes, projectIds),
     [projectIds, selectedScopes]
   );
 
   const counts = useCountsQuery({
-    tab: activeTab,
+    tab: isWorktreeTab ? "all" : activeTab,
     query,
     scopes: selectedScopesForQuery,
     sessionState: "all"
@@ -207,9 +211,9 @@ export function App() {
     limit: 150,
     sort: "updatedAt",
     direction: "desc"
-  });
+  }, !isWorktreeTab);
 
-  const itemRows = items.data?.items ?? [];
+  const itemRows = isWorktreeTab ? [] : items.data?.items ?? [];
   const selectedItem = useMemo(
     () => itemRows.find((item) => item.id === selectedItemId) ?? itemRows[0] ?? null,
     [itemRows, selectedItemId]
@@ -226,6 +230,7 @@ export function App() {
     mutationFn: (input: ProjectCreateDraft) => promptDeskApi.createProject(input),
     onSuccess: () => {
       void projects.refetch();
+      void worktrees.refetch();
       void counts.refetch();
       void items.refetch();
     }
@@ -237,12 +242,14 @@ export function App() {
     mutationFn: ({ id, name }: { id: string; name: string }) => promptDeskApi.updateProject(id, { name }),
     onSuccess: () => {
       void projects.refetch();
+      void worktrees.refetch();
     }
   });
   const removeProject = useMutation({
     mutationFn: (id: string) => promptDeskApi.removeProject(id),
     onSuccess: () => {
       void projects.refetch();
+      void worktrees.refetch();
       void counts.refetch();
       void items.refetch();
     }
@@ -467,9 +474,11 @@ export function App() {
             <section className="min-w-0 flex-1 overflow-auto p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-lg font-semibold">PromptDesk</h1>
+                  <h1 className="text-lg font-semibold">{isWorktreeTab ? "Worktrees" : "PromptDesk"}</h1>
                   <p className="text-sm text-[var(--muted)]">
-                    Inspect local Codex context, configuration, versions, and safe file actions.
+                    {isWorktreeTab
+                      ? "Review Git worktrees for registered projects."
+                      : "Inspect local Codex context, configuration, versions, and safe file actions."}
                   </p>
                 </div>
                 <Badge tone={events.connectionState === "connected" ? "success" : "warning"}>
@@ -477,81 +486,92 @@ export function App() {
                 </Badge>
               </div>
 
-              <ItemList
-                items={itemRows}
-                activeTab={activeTab}
-                selectedItemId={selectedItem?.id ?? null}
-                loading={items.isLoading || bootstrap.isLoading}
-                error={items.error instanceof Error ? items.error.message : null}
-                onSelectItem={(item) => setSelectedItemId(item.id)}
-                onRevealItem={(item) => {
-                  setSelectedItemId(item.id);
-                  void promptDeskApi.revealItem(item.id);
-                }}
-                onOpenItem={(item) => {
-                  setSelectedItemId(item.id);
-                  void promptDeskApi.openItem(item.id);
-                }}
-                onCopyPath={(item) => copyText(item.absolutePath)}
-                onRetry={() => void items.refetch()}
-              />
-
-              {activeTab === "config" ? (
-                <ConfigsMcpSection
-                  className="mt-4"
-                  configItem={selectedItem?.type === "config" ? selectedItem : null}
-                  servers={mcp.data?.servers ?? []}
-                  tools={mcp.data?.tools ?? []}
-                  busyServerId={mcpActions.inspectServer.isPending ? "busy" : null}
-                  onOpenConfig={(item) => {
-                    setSelectedItemId(item.id);
-                    void promptDeskApi.openItem(item.id);
-                  }}
-                  onInspectServer={(server) => {
-                    if (
-                      window.confirm(
-                        "Discovering MCP tools may start the MCP server command configured on disk. Continue only if you trust this configuration."
-                      )
-                    ) {
-                      mcpActions.inspectServer.mutate({ serverId: server.id, input: { confirmed: true } });
-                    }
-                  }}
-                  onInspectAll={() => {
-                    if (
-                      window.confirm(
-                        "Discovering MCP tools may start MCP server commands configured on disk. Continue only if you trust these configurations."
-                      )
-                    ) {
-                      mcpActions.inspectAll.mutate({ confirmed: true });
-                    }
-                  }}
+              {isWorktreeTab ? (
+                <WorktreesPanel
+                  projects={worktrees.data?.projects ?? []}
+                  loading={worktrees.isLoading || bootstrap.isLoading}
+                  error={worktrees.error instanceof Error ? worktrees.error.message : null}
+                  onRefresh={() => void worktrees.refetch()}
                 />
-              ) : null}
+              ) : (
+                <>
+                  <ItemList
+                    items={itemRows}
+                    activeTab={activeTab}
+                    selectedItemId={selectedItem?.id ?? null}
+                    loading={items.isLoading || bootstrap.isLoading}
+                    error={items.error instanceof Error ? items.error.message : null}
+                    onSelectItem={(item) => setSelectedItemId(item.id)}
+                    onRevealItem={(item) => {
+                      setSelectedItemId(item.id);
+                      void promptDeskApi.revealItem(item.id);
+                    }}
+                    onOpenItem={(item) => {
+                      setSelectedItemId(item.id);
+                      void promptDeskApi.openItem(item.id);
+                    }}
+                    onCopyPath={(item) => copyText(item.absolutePath)}
+                    onRetry={() => void items.refetch()}
+                  />
 
-              {activeTab === "session" ? (
-                <SessionsReadOnlyPanel
-                  className="mt-4"
-                  sessions={itemRows.filter((item) => item.type === "session").map(codexItemToSessionRecord)}
-                  selectedSessionId={selectedItem?.type === "session" ? selectedItem.id : null}
-                  onSelectSession={(session) => setSelectedItemId(session.item.id)}
-                />
-              ) : null}
+                  {activeTab === "config" ? (
+                    <ConfigsMcpSection
+                      className="mt-4"
+                      configItem={selectedItem?.type === "config" ? selectedItem : null}
+                      servers={mcp.data?.servers ?? []}
+                      tools={mcp.data?.tools ?? []}
+                      busyServerId={mcpActions.inspectServer.isPending ? "busy" : null}
+                      onOpenConfig={(item) => {
+                        setSelectedItemId(item.id);
+                        void promptDeskApi.openItem(item.id);
+                      }}
+                      onInspectServer={(server) => {
+                        if (
+                          window.confirm(
+                            "Discovering MCP tools may start the MCP server command configured on disk. Continue only if you trust this configuration."
+                          )
+                        ) {
+                          mcpActions.inspectServer.mutate({ serverId: server.id, input: { confirmed: true } });
+                        }
+                      }}
+                      onInspectAll={() => {
+                        if (
+                          window.confirm(
+                            "Discovering MCP tools may start MCP server commands configured on disk. Continue only if you trust these configurations."
+                          )
+                        ) {
+                          mcpActions.inspectAll.mutate({ confirmed: true });
+                        }
+                      }}
+                    />
+                  ) : null}
 
-              {activeTab === "activity" ? (
-                <ActivityTrail
-                  className="mt-4"
-                  historyItems={itemRows.filter((item) => item.type === "activity")}
-                  appEvents={appEvents.data?.events ?? []}
-                  onRefresh={() => {
-                    void appEvents.refetch();
-                    void items.refetch();
-                  }}
-                  onSelectHistoryItem={(item) => setSelectedItemId(item.id)}
-                />
-              ) : null}
+                  {activeTab === "session" ? (
+                    <SessionsReadOnlyPanel
+                      className="mt-4"
+                      sessions={itemRows.filter((item) => item.type === "session").map(codexItemToSessionRecord)}
+                      selectedSessionId={selectedItem?.type === "session" ? selectedItem.id : null}
+                      onSelectSession={(session) => setSelectedItemId(session.item.id)}
+                    />
+                  ) : null}
+
+                  {activeTab === "activity" ? (
+                    <ActivityTrail
+                      className="mt-4"
+                      historyItems={itemRows.filter((item) => item.type === "activity")}
+                      appEvents={appEvents.data?.events ?? []}
+                      onRefresh={() => {
+                        void appEvents.refetch();
+                        void items.refetch();
+                      }}
+                      onSelectHistoryItem={(item) => setSelectedItemId(item.id)}
+                    />
+                  ) : null}
+                </>
+              )}
             </section>
 
-            {rightPanelOpen ? (
+            {rightPanelOpen && !isWorktreeTab ? (
               <>
                 <PanelResizeHandle
                   className="max-[900px]:hidden"

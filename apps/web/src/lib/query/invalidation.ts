@@ -18,6 +18,7 @@ export function invalidateForPromptDeskEvent(queryClient: QueryClient, event: Ap
     case "project-scanned":
     case "branch-changed":
       void queryClient.invalidateQueries({ queryKey: promptDeskQueryKeys.projects() });
+      void queryClient.invalidateQueries({ queryKey: promptDeskQueryKeys.worktrees() });
       void queryClient.invalidateQueries({ queryKey: ["prompt-desk", "counts"] });
       void queryClient.invalidateQueries({ queryKey: ["prompt-desk", "items"] });
       break;
