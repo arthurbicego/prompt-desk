@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { CodexItem, FileVersion, ItemPreview, RestoreConflictMode } from "@prompt-desk/shared";
 import { Badge } from "../../components/ui/badge";
 import { cn } from "../../lib/utils";
+import { RestoreConfirmDialog } from "../dialogs";
 import { SafePreview } from "../preview";
 import { VersionHistory } from "../versions";
 import { ItemActions } from "./ItemActions";
@@ -65,6 +66,7 @@ export function ItemDetailPanel({
   className
 }: ItemDetailPanelProps) {
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [pendingRestoreVersion, setPendingRestoreVersion] = useState<FileVersion | null>(null);
   const selectedVersion = useMemo(
     () => versions.find((version) => version.id === selectedVersionId) ?? versions[0] ?? null,
     [selectedVersionId, versions]
@@ -165,7 +167,26 @@ export function ItemDetailPanel({
           onSelectVersion={(version) => setSelectedVersionId(version.id)}
           onCompare={(version) => onCompare?.(item, version)}
           onOpen={(version) => onOpenVersion?.(item, version)}
-          onRestore={(version) => onRestoreVersion?.(item, version, { mode: "overwrite", rememberDecision: false })}
+          onRestore={(version) => {
+            setSelectedVersionId(version.id);
+            setPendingRestoreVersion(version);
+          }}
+        />
+        <RestoreConfirmDialog
+          open={Boolean(pendingRestoreVersion)}
+          item={item}
+          version={pendingRestoreVersion}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingRestoreVersion(null);
+            }
+          }}
+          onConfirm={(input) => {
+            if (pendingRestoreVersion) {
+              onRestoreVersion?.(item, pendingRestoreVersion, input);
+            }
+            setPendingRestoreVersion(null);
+          }}
         />
       </div>
     </aside>

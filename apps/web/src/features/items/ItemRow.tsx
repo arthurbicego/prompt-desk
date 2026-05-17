@@ -1,7 +1,7 @@
 import { Copy, ExternalLink, FolderOpen, Info } from "lucide-react";
 import type { CodexItem, PromptDeskTab } from "@prompt-desk/shared";
+import { IconButton } from "../../components/common/IconButton";
 import { Badge, type BadgeTone } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
 import { editabilityLabels, formatDateTime, itemScopeLabel, itemTypeLabels, shortHash } from "./labels";
 
@@ -26,6 +26,7 @@ export function ItemRow({
 }: ItemRowProps) {
   const showType = activeTab === "all";
   const editabilityTone = getEditabilityTone(item.editability);
+  const canOpen = item.editability === "editable";
 
   return (
     <div
@@ -62,24 +63,48 @@ export function ItemRow({
       </button>
 
       <div className="flex justify-end gap-1">
-        <Button variant="ghost" size="iconSm" aria-label={`Show details for ${item.name}`} onClick={() => onSelect?.(item)}>
-          <Info size={14} />
-        </Button>
-        <Button variant="ghost" size="iconSm" aria-label={`Copy full path for ${item.name}`} onClick={() => onCopyPath?.(item)}>
-          <Copy size={14} />
-        </Button>
-        <Button variant="ghost" size="iconSm" aria-label={`Reveal ${item.name}`} onClick={() => onReveal?.(item)}>
-          <FolderOpen size={14} />
-        </Button>
-        <Button
+        <IconButton
+          icon={Info}
           variant="ghost"
           size="iconSm"
-          aria-label={`Open ${item.name} in VS Code`}
-          disabled={item.editability !== "editable"}
-          onClick={() => onOpen?.(item)}
-        >
-          <ExternalLink size={14} />
-        </Button>
+          label={`Show details for ${item.name}`}
+          tooltip="Show details"
+          onClick={() => onSelect?.(item)}
+        />
+        <IconButton
+          icon={Copy}
+          variant="ghost"
+          size="iconSm"
+          label={`Copy full path for ${item.name}`}
+          tooltip="Copy full path"
+          onClick={() => {
+            onSelect?.(item);
+            onCopyPath?.(item);
+          }}
+        />
+        <IconButton
+          icon={FolderOpen}
+          variant="ghost"
+          size="iconSm"
+          label={`Reveal ${item.name}`}
+          tooltip="Reveal in Finder"
+          onClick={() => {
+            onSelect?.(item);
+            onReveal?.(item);
+          }}
+        />
+        <IconButton
+          icon={ExternalLink}
+          variant="ghost"
+          size="iconSm"
+          label={`Open ${item.name} in VS Code`}
+          tooltip={canOpen ? "Open in VS Code" : "Only editable files can be opened in VS Code"}
+          disabled={!canOpen}
+          onClick={() => {
+            onSelect?.(item);
+            onOpen?.(item);
+          }}
+        />
       </div>
     </div>
   );

@@ -65,6 +65,38 @@ function readStoredBoolean(key: string, fallback: boolean) {
   return storedValue === null ? fallback : storedValue === "true";
 }
 
+async function writeClipboardText(value: string) {
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+  } catch {
+    // Fall back to the legacy copy path below.
+  }
+
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    document.execCommand("copy");
+  } catch {
+    // Copy is best-effort when the browser blocks clipboard APIs.
+  } finally {
+    textarea.remove();
+  }
+}
+
 function beginPanelResize({
   event,
   initialWidth,
@@ -326,7 +358,7 @@ export function App() {
   }
 
   function copyText(value: string) {
-    void navigator.clipboard?.writeText(value);
+    void writeClipboardText(value);
   }
 
   function startLeftPanelResize(event: PointerEvent<HTMLButtonElement>) {

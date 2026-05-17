@@ -1,6 +1,6 @@
 import { GitCompare, History, RotateCcw, SquarePen } from "lucide-react";
 import type { FileVersion } from "@prompt-desk/shared";
-import { Button } from "../../components/ui/button";
+import { IconButton } from "../../components/common/IconButton";
 import { Badge } from "../../components/ui/badge";
 import { cn } from "../../lib/utils";
 import { formatBytes, formatDateTime, shortHash } from "../items/labels";
@@ -42,6 +42,11 @@ export function VersionHistory({
     return <HistoryState title="No version history" body="This item does not have local snapshots yet." className={className} />;
   }
 
+  function runVersionAction(version: FileVersion, action?: (version: FileVersion) => void) {
+    onSelectVersion?.(version);
+    action?.(version);
+  }
+
   return (
     <section className={cn("min-w-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]", className)}>
       <div className="flex h-10 items-center gap-2 border-b border-[var(--border)] px-3">
@@ -69,21 +74,33 @@ export function VersionHistory({
               </div>
             </button>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" aria-label="Compare with current" onClick={() => onCompare?.(version)}>
-                <GitCompare size={15} />
-              </Button>
-              <Button variant="ghost" size="icon" aria-label="Open historical version" onClick={() => onOpen?.(version)}>
-                <SquarePen size={15} />
-              </Button>
-              <Button
+              <IconButton
+                icon={GitCompare}
                 variant="ghost"
                 size="icon"
-                aria-label="Restore this version"
-                disabled={readOnly}
-                onClick={() => onRestore?.(version)}
-              >
-                <RotateCcw size={15} />
-              </Button>
+                label="Compare with current"
+                tooltip={onCompare ? "Compare with current" : "Compare action is unavailable"}
+                disabled={!onCompare}
+                onClick={() => runVersionAction(version, onCompare)}
+              />
+              <IconButton
+                icon={SquarePen}
+                variant="ghost"
+                size="icon"
+                label="Open historical version"
+                tooltip={onOpen ? "Open historical version" : "Open version action is unavailable"}
+                disabled={!onOpen}
+                onClick={() => runVersionAction(version, onOpen)}
+              />
+              <IconButton
+                icon={RotateCcw}
+                variant="ghost"
+                size="icon"
+                label="Restore this version"
+                tooltip={readOnly ? "Read-only items cannot be restored" : "Restore this version"}
+                disabled={readOnly || !onRestore}
+                onClick={() => runVersionAction(version, onRestore)}
+              />
             </div>
           </div>
         ))}
