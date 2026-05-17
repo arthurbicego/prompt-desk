@@ -1,0 +1,8 @@
+{
+  "postToolUse": [
+    {
+      "name": "project-fixture-hook",
+      "command": "echo done"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+import type { CodexItem } from "@prompt-desk/shared";
+
+const now = new Date().toISOString();
+
+export const fallbackItems: CodexItem[] = [
+  {
+    id: "fallback-agents",
+    type: "agents",
+    origin: "global",
+    name: "AGENTS.md",
+    absolutePath: "/Users/example/.codex/AGENTS.md",
+    relativePath: "~/.codex/AGENTS.md",
+    projectId: null,
+    projectName: null,
+    pluginName: null,
+    editability: "editable",
+    status: "current",
+    hash: "7a5b3d6e9f1c2a4b",
+    size: 4210,
+    createdAt: now,
+    detectedAt: now,
+    updatedAt: now,
+    lastVersionAt: now,
+    blockedReason: null,
+    metadata: {}
+  },
+  {
+    id: "fallback-config",
+    type: "config",
+    origin: "global",
+    name: "config.toml",
+    absolutePath: "/Users/example/.codex/config.toml",
+    relativePath: "~/.codex/config.toml",
+    projectId: null,
+    projectName: null,
+    pluginName: null,
+    editability: "editable",
+    status: "current",
+    hash: "2b6f1d44e91c",
+    size: 1320,
+    createdAt: now,
+    detectedAt: now,
+    updatedAt: now,
+    lastVersionAt: now,
+    blockedReason: null,
+    metadata: { mcpServers: 2 }
+  },
+  {
+    id: "fallback-session",
+    type: "session",
+    origin: "global",
+    name: "session-2026-05-15.jsonl",
+    absolutePath: "/Users/example/.codex/sessions/session-2026-05-15.jsonl",
+    relativePath: "sessions/session-2026-05-15.jsonl",
+    projectId: null,
+    projectName: null,
+    pluginName: null,
+    editability: "read-only",
+    status: "current",
+    hash: "9c1aef228a",
+    size: 9824,
+    createdAt: now,
+    detectedAt: now,
+    updatedAt: now,
+    lastVersionAt: null,
+    blockedReason: null,
+    metadata: { state: "active" }
+  }
+];

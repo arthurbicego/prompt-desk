@@ -1,0 +1,8 @@
+{
+  "preToolUse": [
+    {
+      "name": "fixture-policy",
+      "command": "echo fixture"
+    }
+  ]
+}

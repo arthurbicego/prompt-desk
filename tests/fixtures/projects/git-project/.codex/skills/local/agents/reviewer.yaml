@@ -1,0 +1,3 @@
+name: project-reviewer
+description: Reviews project fixture changes.
+instructions: Keep tests focused and deterministic.

@@ -1,0 +1,4 @@
+model = "gpt-5"
+
+[features]
+fixture = true

@@ -1,0 +1,12 @@
+model = "gpt-5"
+approval_policy = "on-request"
+
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+disabled = false
+
+[mcp_servers.disabled_fixture]
+command = "node"
+args = ["server.js"]
+disabled = true

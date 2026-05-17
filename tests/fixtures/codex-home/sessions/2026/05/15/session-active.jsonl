@@ -1,0 +1,2 @@
+{"role":"user","content":"Inspect the active fixture session."}
+{"role":"assistant","content":"Session content is read-only."}
