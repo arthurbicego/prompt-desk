@@ -3,7 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getDb } from "../../db/connection.js";
 import { ItemsRepository } from "../../db/repositories/itemsRepository.js";
-import { isIgnoredRelativePath, toRelativePath, type ClassificationContext } from "../../domain/items/itemPolicy.js";
+import {
+  isIgnoredRelativePath,
+  toRelativePath,
+  type ClassificationContext,
+  type ScanScope
+} from "../../domain/items/itemPolicy.js";
 import { classifyItemPath, isPathCandidate } from "../files/itemClassifier.js";
 import { inspectFileSafety } from "../files/fileSafety.js";
 import { SearchService } from "../search/searchService.js";
@@ -124,7 +129,7 @@ export async function collectGlobalCandidates(rootPath: string): Promise<Set<str
     if (await fileExists(absolutePath)) candidates.add(absolutePath);
   }
 
-  await addWalkedCandidates(rootPath, candidates, ["skills", "plugins", "memories", "automations", "sessions", "archived_sessions"]);
+  await addWalkedCandidates(rootPath, candidates, ["skills", "plugins", "memories", "automations", "sessions", "archived_sessions"], "global");
   await addRootSqliteStateFiles(rootPath, candidates);
   return candidates;
 }
@@ -133,15 +138,16 @@ export async function collectProjectCandidates(rootPath: string): Promise<Set<st
   const candidates = new Set<string>();
   for await (const absolutePath of walkFiles({
     rootPath,
+    scope: "project",
     include: (_absolutePath, relativePath) => {
-      if (isIgnoredRelativePath(relativePath)) return false;
+      if (isIgnoredRelativePath(relativePath, "project")) return false;
       return path.posix.basename(relativePath) === "AGENTS.md";
     }
   })) {
     candidates.add(absolutePath);
   }
 
-  await addWalkedCandidates(rootPath, candidates, [".codex", ".agents"]);
+  await addWalkedCandidates(rootPath, candidates, [".codex", ".agents"], "project");
   return candidates;
 }
 
@@ -150,13 +156,19 @@ export async function hashFile(filePath: string): Promise<string> {
   return crypto.createHash("sha256").update(content).digest("hex");
 }
 
-async function addWalkedCandidates(rootPath: string, candidates: Set<string>, relativeRoots: string[]): Promise<void> {
+async function addWalkedCandidates(
+  rootPath: string,
+  candidates: Set<string>,
+  relativeRoots: string[],
+  scope: ScanScope
+): Promise<void> {
   for (const relativeRoot of relativeRoots) {
     const startPath = path.join(rootPath, relativeRoot);
     for await (const absolutePath of walkFiles({
       rootPath,
+      scope,
       startPath,
-      include: (_absolutePath, relativePath) => isPathCandidate(toRelativePath(rootPath, path.join(rootPath, relativePath)), relativeRoot.startsWith(".") ? "project" : "global")
+      include: (_absolutePath, relativePath) => isPathCandidate(toRelativePath(rootPath, path.join(rootPath, relativePath)), scope)
     })) {
       candidates.add(absolutePath);
     }

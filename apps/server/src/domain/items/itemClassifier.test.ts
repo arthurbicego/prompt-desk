@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { isIgnoredRelativePath } from "./itemPolicy.js";
 import { classifyItemPath } from "../../services/files/itemClassifier.js";
 
 async function makeTempRoot(): Promise<string> {
@@ -72,6 +73,23 @@ describe("item classifier", () => {
       editability: "read-only",
       pluginName: "browser"
     });
+  });
+
+  it("ignores transient global roots before item classification", async () => {
+    const root = await makeTempRoot();
+    const tmpAgents = await writeFixture(root, ".tmp/plugins/cache/browser/AGENTS.md", "# Temporary plugin\n");
+    const tmpSkill = await writeFixture(root, ".tmp/plugins/cache/browser/skills/browser/SKILL.md", "# Temporary skill\n");
+    const worktreeAgents = await writeFixture(root, "worktrees/7dfc/prompt-desk/AGENTS.md", "# Worktree\n");
+    const worktreeSkill = await writeFixture(root, "worktrees/7dfc/prompt-desk/.codex/skills/local/SKILL.md", "# Local\n");
+    const cacheAgents = await writeFixture(root, "cache/copied/AGENTS.md", "# Cache\n");
+
+    expect(isIgnoredRelativePath(".tmp/plugins/cache/browser/skills/browser/SKILL.md", "global")).toBe(true);
+    expect(isIgnoredRelativePath("worktrees/7dfc/prompt-desk/.codex/skills/local/SKILL.md", "global")).toBe(true);
+    expect(isIgnoredRelativePath("plugins/cache/browser/skills/browser/SKILL.md", "global")).toBe(false);
+
+    for (const absolutePath of [tmpAgents, tmpSkill, worktreeAgents, worktreeSkill, cacheAgents]) {
+      await expect(classifyItemPath(absolutePath, { scope: "global", rootPath: root })).resolves.toBeNull();
+    }
   });
 
   it("classifies editable project files and ignores heavy directories", async () => {

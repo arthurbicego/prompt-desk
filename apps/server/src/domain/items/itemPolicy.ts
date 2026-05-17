@@ -44,6 +44,8 @@ export const IGNORED_NAMES = new Set([
   ".DS_Store"
 ]);
 
+export const GLOBAL_IGNORED_ROOTS = new Set([".tmp", "tmp", "worktrees", "cache", "vendor_imports", "sqlite", "log"]);
+
 export function normalizePathForPolicy(value: string): string {
   return path.resolve(value);
 }
@@ -61,8 +63,10 @@ export function hasIgnoredPathSegment(absolutePath: string): boolean {
   return splitRelativePath(absolutePath).some((segment) => IGNORED_NAMES.has(segment));
 }
 
-export function isIgnoredRelativePath(relativePath: string): boolean {
-  return splitRelativePath(relativePath).some((segment) => IGNORED_NAMES.has(segment));
+export function isIgnoredRelativePath(relativePath: string, scope?: ScanScope): boolean {
+  const segments = splitRelativePath(relativePath);
+  if (segments.some((segment) => IGNORED_NAMES.has(segment))) return true;
+  return scope === "global" && segments[0] ? GLOBAL_IGNORED_ROOTS.has(segments[0]) : false;
 }
 
 export function isWithinRoot(rootPath: string, absolutePath: string): boolean {
