@@ -83,7 +83,7 @@ export interface PromptDeskApiClientOptions {
 }
 
 function makeUrl(path: string, baseUrl: string): URL {
-  const origin = typeof window === "undefined" ? "http://127.0.0.1:5173" : window.location.origin;
+  const origin = typeof window === "undefined" ? "http://127.0.0.1:5175" : window.location.origin;
   return new URL(`${baseUrl}${path}`, origin);
 }
 

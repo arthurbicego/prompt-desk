@@ -52,7 +52,7 @@ npm run dev
 
 Default local endpoints:
 
-- Web: `http://127.0.0.1:5173`
+- Web: `http://127.0.0.1:5175`
 - API: `http://127.0.0.1:4317`
 
 Run verification:
@@ -69,6 +69,7 @@ npm run build
 | Variable | Purpose |
 | --- | --- |
 | `PROMPT_DESK_PORT` | API port. Defaults to `4317`. |
+| `PROMPT_DESK_WEB_PORT` | Web dev server port. Defaults to `5175`. |
 | `PROMPT_DESK_HOME` | Absolute path for PromptDesk runtime data. Defaults to `~/Library/Application Support/PromptDesk`. |
 | `CODEX_HOME` | Optional Codex Home override. If unset, PromptDesk falls back to readable `~/.codex`. |
 
