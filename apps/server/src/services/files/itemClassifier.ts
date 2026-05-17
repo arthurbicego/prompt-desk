@@ -94,6 +94,7 @@ export function classifyType(relativePath: string, scope: "global" | "project"):
   if (base === "SKILL.md" && isSkillPath(normalized, scope)) return "skill";
   if (isAgentPath(normalized, scope)) return "agent";
   if (isPluginPath(normalized, scope)) return "plugin";
+  if (isHookPath(normalized, scope)) return "hook";
   if (isConfigPath(normalized, scope)) return "config";
   if (isMemoryPath(normalized, scope)) return "memory";
   if (isAutomationPath(normalized, scope)) return "automation";
@@ -174,9 +175,15 @@ function isPluginPath(relativePath: string, scope: "global" | "project"): boolea
 function isConfigPath(relativePath: string, scope: "global" | "project"): boolean {
   const normalized = relativePath.replaceAll("\\", "/");
   if (scope === "global") {
-    return normalized === "config.toml" || normalized === "hooks.json" || normalized === "auth.json";
+    return normalized === "config.toml" || normalized === "auth.json";
   }
-  return normalized === ".codex/config.toml" || normalized === ".codex/hooks.json";
+  return normalized === ".codex/config.toml";
+}
+
+function isHookPath(relativePath: string, scope: "global" | "project"): boolean {
+  const normalized = relativePath.replaceAll("\\", "/");
+  if (scope === "global") return normalized === "hooks.json";
+  return normalized === ".codex/hooks.json";
 }
 
 function isMemoryPath(relativePath: string, scope: "global" | "project"): boolean {

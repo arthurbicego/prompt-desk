@@ -51,6 +51,7 @@ describe("PromptDesk technical behavior", () => {
       path.relative(codexHome, filePath).split(path.sep).join("/")
     );
     expect(globalCandidates).toContain("AGENTS.md");
+    expect(globalCandidates).toContain("hooks.json");
     expect(globalCandidates).toContain("skills/team-context/SKILL.md");
     expect(globalCandidates).toContain("sessions/2026/05/15/session-active.jsonl");
     expect(globalCandidates).toContain("archived_sessions/2026/session-archived.jsonl");
@@ -67,6 +68,7 @@ describe("PromptDesk technical behavior", () => {
     expect(projectCandidates).toContain("packages/api/AGENTS.md");
     expect(projectCandidates).toContain("packages/nested-repo/AGENTS.md");
     expect(projectCandidates).toContain(".codex/config.toml");
+    expect(projectCandidates).toContain(".codex/hooks.json");
     expect(projectCandidates).toContain(".agents/skills/imported/SKILL.md");
     expect(projectCandidates).not.toContain("node_modules/pkg/AGENTS.md");
     expect(projectCandidates).not.toContain("dist/AGENTS.md");
@@ -152,8 +154,19 @@ describe("PromptDesk technical behavior", () => {
       editability: "blocked",
       status: "blocked"
     });
+    expect(items.findByAbsolutePath(path.join(codexHome, "hooks.json"))).toMatchObject({
+      type: "hook",
+      origin: "global",
+      editability: "editable"
+    });
     expect(items.findByAbsolutePath(path.join(projectPath, "packages/api/AGENTS.md"))).toMatchObject({
       type: "agents",
+      origin: "project",
+      projectId: "project_fixture",
+      editability: "editable"
+    });
+    expect(items.findByAbsolutePath(path.join(projectPath, ".codex/hooks.json"))).toMatchObject({
+      type: "hook",
       origin: "project",
       projectId: "project_fixture",
       editability: "editable"

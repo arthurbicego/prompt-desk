@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import type Database from "better-sqlite3";
-import type { CodexItem, ItemType, PromptDeskTab, SessionState } from "@prompt-desk/shared";
+import { TABS, type CodexItem, type ItemType, type PromptDeskTab, type SessionState } from "@prompt-desk/shared";
 import { GLOBAL_IGNORED_PREFIXES, GLOBAL_IGNORED_ROOTS } from "../../domain/items/itemPolicy.js";
 import { getDb } from "../connection.js";
 import { parseJson, toJson } from "../json.js";
@@ -156,18 +156,7 @@ export class ItemsRepository {
   }
 
   countByTab(scopes: string[]): Record<string, number> {
-    const tabs: PromptDeskTab[] = [
-      "agents",
-      "skill",
-      "agent",
-      "plugin",
-      "config",
-      "memory",
-      "automation",
-      "session",
-      "activity",
-      "all"
-    ];
+    const tabs: readonly PromptDeskTab[] = TABS;
     const counts: Record<string, number> = {};
     for (const tab of tabs) {
       const where = buildWhere({

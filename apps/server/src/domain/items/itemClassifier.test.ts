@@ -22,7 +22,7 @@ describe("item classifier", () => {
     const cases = [
       ["AGENTS.md", "agents"],
       ["config.toml", "config"],
-      ["hooks.json", "config"],
+      ["hooks.json", "hook"],
       ["skills/example/SKILL.md", "skill"],
       ["skills/example/agents/reviewer.yaml", "agent"],
       ["memories/team.md", "memory"],
@@ -103,11 +103,12 @@ describe("item classifier", () => {
     const root = await makeTempRoot();
     const nestedAgents = await writeFixture(root, "packages/api/AGENTS.md", "# API\n");
     const config = await writeFixture(root, ".codex/config.toml", "[mcp]\n");
+    const hooks = await writeFixture(root, ".codex/hooks.json", '{"hooks":[]}\n');
     const skill = await writeFixture(root, ".agents/skills/local/SKILL.md", "# Local\n");
     const agent = await writeFixture(root, ".codex/skills/local/agents/reviewer.yaml", "name: reviewer\n");
     const ignored = await writeFixture(root, "node_modules/pkg/AGENTS.md", "# Ignored\n");
 
-    for (const absolutePath of [nestedAgents, config, skill, agent]) {
+    for (const absolutePath of [nestedAgents, config, hooks, skill, agent]) {
       const item = await classifyItemPath(absolutePath, {
         scope: "project",
         rootPath: root,
@@ -117,6 +118,10 @@ describe("item classifier", () => {
       expect(item?.origin).toBe("project");
       expect(item?.editability).toBe("editable");
     }
+
+    await expect(classifyItemPath(hooks, { scope: "project", rootPath: root })).resolves.toMatchObject({
+      type: "hook"
+    });
 
     await expect(classifyItemPath(ignored, { scope: "project", rootPath: root })).resolves.toBeNull();
   });
