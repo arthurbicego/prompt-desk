@@ -6,6 +6,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
+import { Switch } from "../ui/switch";
 import { CountChip, GitStatusChip } from "../common/StatusChip";
 import { IconButton } from "../common/IconButton";
 import { cn } from "../../lib/utils";
@@ -63,6 +64,36 @@ function SidebarRow({
     >
       {children}
     </button>
+  );
+}
+
+function ScopeToggleRow({
+  scope,
+  onToggle
+}: {
+  scope: SidebarScope;
+  onToggle?: (scopeId: string) => void;
+}) {
+  const switchId = `scope-toggle-${scope.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+  return (
+    <div
+      className={cn(
+        "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+        scope.selected ? "bg-[var(--surface-3)] text-[var(--foreground)]" : "text-[var(--muted)]"
+      )}
+    >
+      <label htmlFor={switchId} className="min-w-0 cursor-pointer truncate font-medium">
+        {scope.label}
+      </label>
+      <CountChip count={scope.count} />
+      <Switch
+        id={switchId}
+        checked={Boolean(scope.selected)}
+        aria-label={`Toggle ${scope.label}`}
+        onCheckedChange={() => onToggle?.(scope.id)}
+      />
+    </div>
   );
 }
 
@@ -129,14 +160,7 @@ export function Sidebar({
             </div>
 
             {scopeRows.map((scope) => (
-              <SidebarRow
-                key={scope.id}
-                active={scope.selected}
-                onClick={() => onToggleScope?.(scope.id)}
-              >
-                <span className="truncate font-medium">{scope.label}</span>
-                <CountChip count={scope.count} />
-              </SidebarRow>
+              <ScopeToggleRow key={scope.id} scope={scope} onToggle={onToggleScope} />
             ))}
           </section>
 

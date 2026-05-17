@@ -269,7 +269,7 @@ export function App() {
     setTheme(preferences.theme);
     setLanguage(preferences.language);
     setActiveTab(preferences.activeTab);
-    setSelectedScopes(preferences.selectedScopes.length > 0 ? preferences.selectedScopes : ["global"]);
+    setSelectedScopes(preferences.selectedScopes);
     void i18n.changeLanguage(preferences.language);
   }, [bootstrap.data?.preferences]);
 
@@ -434,8 +434,8 @@ export function App() {
                 onToggleScope={toggleScope}
                 onToggleProject={(projectId) => toggleScope(projectScopeId(projectId))}
                 onClearScopes={() => {
-                  setSelectedScopes(["global"]);
-                  updatePreferences.mutate({ selectedScopes: ["global"] });
+                  setSelectedScopes([]);
+                  updatePreferences.mutate({ selectedScopes: [] });
                 }}
                 onAddProject={() => setProjectsOpen(true)}
                 onManageProjects={() => setProjectsOpen(true)}

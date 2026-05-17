@@ -231,9 +231,22 @@ describe("PromptDesk technical behavior", () => {
         })
         .items.some((item) => item.absolutePath === ignoredPluginCachePath)
     ).toBe(false);
+    expect(
+      items.list({
+        tab: "all",
+        scopes: [],
+        sessionState: "all",
+        limit: 50,
+        offset: 0,
+        sort: "updatedAt",
+        direction: "desc"
+      })
+    ).toMatchObject({ items: [], total: 0 });
+    expect(items.countByTab([]).all).toBe(0);
 
     const search = new SearchRepository();
     expect(search.search({ query: "global guidance", limit: 10, offset: 0, scopes: ["global"] })).not.toHaveLength(0);
+    expect(search.search({ query: "global guidance", limit: 10, offset: 0, scopes: [] })).toHaveLength(0);
     expect(search.search({ query: "fixture-user", limit: 10, offset: 0, scopes: ["global"] })).toHaveLength(0);
 
     const searchService = new SearchService();

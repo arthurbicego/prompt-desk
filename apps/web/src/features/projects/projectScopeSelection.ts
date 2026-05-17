@@ -15,7 +15,7 @@ export function normalizeProjectScopes(scopes: string[], projectIds: string[]): 
     if (!nextScopes.includes(scope)) nextScopes.push(scope);
   }
 
-  return nextScopes.length > 0 ? nextScopes : ["global"];
+  return nextScopes;
 }
 
 export function areAllProjectScopesSelected(scopes: string[], projectIds: string[]): boolean {
@@ -32,7 +32,7 @@ export function toggleScopeSelection(scopes: string[], scopeId: string, projectI
     ? normalizedScopes.filter((scope) => scope !== scopeId)
     : [...normalizedScopes, scopeId];
 
-  return nextScopes.length > 0 ? nextScopes : ["global"];
+  return nextScopes;
 }
 
 function toggleAllProjectScopes(scopes: string[], projectIds: string[]): string[] {
@@ -46,5 +46,5 @@ function toggleAllProjectScopes(scopes: string[], projectIds: string[]): string[
     ? normalizedScopes.filter((scope) => !projectScopes.includes(scope))
     : [...normalizedScopes, ...projectScopes.filter((scope) => !selectedScopes.has(scope))];
 
-  return nextScopes.length > 0 ? nextScopes : ["global"];
+  return nextScopes;
 }

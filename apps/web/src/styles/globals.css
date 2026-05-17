@@ -24,6 +24,11 @@
   --info: #72c7d9;
   --info-muted: #153a43;
   --focus: #9cc9ff;
+  --switch-track: var(--surface-3);
+  --switch-track-checked: var(--accent);
+  --switch-border: transparent;
+  --switch-thumb: var(--foreground);
+  --switch-thumb-checked: var(--foreground);
   --shadow: 0 18px 60px rgb(0 0 0 / 0.42);
   --radius: 0.5rem;
   --topbar-height: 3rem;
@@ -56,6 +61,11 @@
   --info: #197185;
   --info-muted: #d8f3f8;
   --focus: #2567b7;
+  --switch-track: #cfd6df;
+  --switch-track-checked: #2567b7;
+  --switch-border: #b7bfca;
+  --switch-thumb: #ffffff;
+  --switch-thumb-checked: #ffffff;
   --shadow: 0 18px 48px rgb(16 24 40 / 0.16);
 }
 

@@ -308,11 +308,12 @@ function addIgnoredGlobalPathFilter(clauses: string[], params: Record<string, un
 }
 
 function buildScopeClauses(scopes: string[], params: Record<string, unknown>): string[] {
-  const normalized = scopes.length > 0 ? scopes : ["global"];
+  if (scopes.length === 0) return ["1 = 0"];
+
   const clauses: string[] = [];
   const projectIds: string[] = [];
 
-  for (const scope of normalized) {
+  for (const scope of scopes) {
     if (scope === "global") clauses.push("origin IN ('global', 'plugin')");
     else if (scope === "plugin") clauses.push("origin = 'plugin'");
     else if (scope === "all-projects") clauses.push("origin = 'project'");

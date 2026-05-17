@@ -27,6 +27,12 @@ describe("project scope selection", () => {
     expect(areAllProjectScopesSelected(deselected, projectIds)).toBe(false);
   });
 
+  it("allows every scope to be deselected without falling back to global", () => {
+    expect(toggleScopeSelection(["global"], "global", projectIds)).toEqual([]);
+    expect(toggleScopeSelection(["project:project_1"], "project:project_1", projectIds)).toEqual([]);
+    expect(toggleScopeSelection(["project:project_1", "project:project_2", "project:project_3"], "all-projects", projectIds)).toEqual([]);
+  });
+
   it("turns off all projects when a listed project is deselected", () => {
     const selected = toggleScopeSelection(["global"], "all-projects", projectIds);
     const partial = toggleScopeSelection(selected, projectScopeId("project_2"), projectIds);
@@ -36,8 +42,7 @@ describe("project scope selection", () => {
   });
 
   it("removes stale project scopes that are no longer listed", () => {
-    expect(normalizeProjectScopes(["project:project_1", "project:removed"], ["project_1"])).toEqual([
-      "project:project_1"
-    ]);
+    expect(normalizeProjectScopes(["project:project_1", "project:removed"], ["project_1"])).toEqual(["project:project_1"]);
+    expect(normalizeProjectScopes(["project:removed"], ["project_1"])).toEqual([]);
   });
 });
