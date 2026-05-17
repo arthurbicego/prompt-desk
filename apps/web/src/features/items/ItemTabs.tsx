@@ -1,11 +1,12 @@
-import type { CountsResponse, PromptDeskTab } from "@prompt-desk/shared";
+import type { PromptDeskTab } from "@prompt-desk/shared";
 import { TABS } from "@prompt-desk/shared";
 import { cn } from "../../lib/utils";
 import { tabLabels } from "./labels";
+import type { TabCounts } from "./tabCounts";
 
 export interface ItemTabsProps {
   activeTab: PromptDeskTab;
-  counts?: CountsResponse["tabs"];
+  counts?: TabCounts;
   onTabChange: (tab: PromptDeskTab) => void;
   className?: string;
 }

@@ -261,6 +261,15 @@ describe("PromptDesk technical behavior", () => {
     expect(search.search({ query: "global guidance", limit: 10, offset: 0, scopes: ["global"] })).not.toHaveLength(0);
     expect(search.search({ query: "global guidance", limit: 10, offset: 0, scopes: [] })).toHaveLength(0);
     expect(search.search({ query: "fixture-user", limit: 10, offset: 0, scopes: ["global"] })).toHaveLength(0);
+    const matchingAgentIds = search.searchItemIds({ query: "editable global", tab: "agents", scopes: ["global"] });
+    expect(matchingAgentIds).not.toHaveLength(0);
+    expect(items.countByTab(["global"], { agents: matchingAgentIds }).agents).toBe(matchingAgentIds.length);
+    expect(items.countByTab(["global"], { agents: [] }).agents).toBe(0);
+    expect(
+      items.countByScope("agents", { global: matchingAgentIds }).find((scope) => scope.scope === "global")
+    ).toMatchObject({
+      count: matchingAgentIds.length
+    });
 
     const searchService = new SearchService();
     await expect(searchService.reindexAll()).resolves.toBeGreaterThan(0);

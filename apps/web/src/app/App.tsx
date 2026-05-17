@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { PointerEvent } from "react";
 import type { Language, PromptDeskTab, Theme } from "@prompt-desk/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ItemDetailPanel, ItemList, ItemTabs } from "../features/items";
+import { buildVisibleTabCounts, ItemDetailPanel, ItemList, ItemTabs } from "../features/items";
 import {
   useBootstrapQuery,
   useAppEventsQuery,
@@ -36,7 +36,7 @@ import {
 import { ConfigsMcpSection } from "../features/configs";
 import { SessionsReadOnlyPanel, codexItemToSessionRecord } from "../features/sessions";
 import { ActivityTrail } from "../features/activity";
-import { WorktreesPanel } from "../features/worktrees";
+import { filterWorktreeProjects, WorktreesPanel } from "../features/worktrees";
 import { i18n } from "../i18n";
 import { cn } from "../lib/utils";
 
@@ -72,6 +72,36 @@ function readStoredBoolean(key: string, fallback: boolean) {
 
   const storedValue = window.localStorage.getItem(key);
   return storedValue === null ? fallback : storedValue === "true";
+}
+
+function getWorktreeEmptyState({
+  query,
+  registeredProjectCount,
+  selectedProjectScopeCount
+}: {
+  query: string;
+  registeredProjectCount: number;
+  selectedProjectScopeCount: number;
+}): { title: string; body: string } | null {
+  if (registeredProjectCount === 0) {
+    return null;
+  }
+
+  if (selectedProjectScopeCount === 0) {
+    return {
+      title: "No projects selected",
+      body: "Turn on a project scope to review its Git worktrees."
+    };
+  }
+
+  if (query.trim()) {
+    return {
+      title: "No worktrees match this search",
+      body: "Try another search term or refresh Git worktrees."
+    };
+  }
+
+  return null;
 }
 
 async function writeClipboardText(value: string) {
@@ -225,6 +255,26 @@ export function App() {
   const mcpActions = useMcpActionMutations();
   const trash = useTrashQuery();
   const appEvents = useAppEventsQuery(150);
+  const worktreeProjects = useMemo(() => worktrees.data?.projects ?? [], [worktrees.data?.projects]);
+  const visibleWorktreeProjects = useMemo(
+    () => filterWorktreeProjects({ projects: worktreeProjects, scopes: selectedScopesForQuery, query }),
+    [query, selectedScopesForQuery, worktreeProjects]
+  );
+  const visibleTabCounts = useMemo(
+    () =>
+      buildVisibleTabCounts({
+        itemCounts: counts.data?.tabs,
+        visibleWorktreeProjects,
+        appEventCount: appEvents.data?.events.length
+      }),
+    [appEvents.data?.events.length, counts.data?.tabs, visibleWorktreeProjects]
+  );
+  const selectedProjectScopeCount = selectedScopesForQuery.filter((scope) => scope.startsWith("project:")).length;
+  const worktreeEmptyState = getWorktreeEmptyState({
+    query,
+    registeredProjectCount: projectRows.length,
+    selectedProjectScopeCount
+  });
 
   const createProject = useMutation({
     mutationFn: (input: ProjectCreateDraft) => promptDeskApi.createProject(input),
@@ -457,7 +507,7 @@ export function App() {
         ) : null}
 
         <main className="flex min-w-0 flex-1 flex-col bg-[var(--background)]">
-          <ItemTabs activeTab={activeTab} counts={counts.data?.tabs} onTabChange={updateActiveTab} />
+          <ItemTabs activeTab={activeTab} counts={visibleTabCounts} onTabChange={updateActiveTab} />
 
           {!bootstrap.data?.codexHome.valid ? (
             <div className="border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3">
@@ -488,9 +538,11 @@ export function App() {
 
               {isWorktreeTab ? (
                 <WorktreesPanel
-                  projects={worktrees.data?.projects ?? []}
+                  projects={visibleWorktreeProjects}
                   loading={worktrees.isLoading || bootstrap.isLoading}
                   error={worktrees.error instanceof Error ? worktrees.error.message : null}
+                  emptyTitle={worktreeEmptyState?.title}
+                  emptyBody={worktreeEmptyState?.body}
                   onRefresh={() => void worktrees.refetch()}
                 />
               ) : (

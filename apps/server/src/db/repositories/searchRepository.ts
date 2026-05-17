@@ -22,6 +22,11 @@ export interface SearchHit {
   rank: number;
 }
 
+interface SearchWhere {
+  clauses: string[];
+  params: Record<string, unknown>;
+}
+
 export class SearchRepository {
   constructor(private readonly db: Database.Database = getDb()) {}
 
@@ -55,35 +60,41 @@ export class SearchRepository {
   }
 
   search(options: SearchOptions): SearchHit[] {
-    const match = toFtsMatch(options.query);
-    if (!match) return [];
-
-    const clauses = ["search_index MATCH @match"];
-    const params: Record<string, unknown> = {
-      match,
+    const where = buildSearchWhere(options);
+    if (!where) return [];
+    const params = {
+      ...where.params,
       limit: options.limit,
       offset: options.offset
     };
-
-    if (options.tab && options.tab !== "all") {
-      clauses.push("type = @type");
-      params.type = options.tab;
-    }
-
-    const scopeClauses = buildScopeClauses(options.scopes ?? ["global"], params);
-    if (scopeClauses.length > 0) clauses.push(`(${scopeClauses.join(" OR ")})`);
 
     const rows = this.db
       .prepare(
         `SELECT item_id AS itemId, bm25(search_index) AS rank
          FROM search_index
-         WHERE ${clauses.join(" AND ")}
+         WHERE ${where.clauses.join(" AND ")}
          ORDER BY rank ASC
          LIMIT @limit OFFSET @offset`
       )
       .all(params) as SearchHit[];
 
     return rows;
+  }
+
+  searchItemIds(options: Omit<SearchOptions, "limit" | "offset">): string[] {
+    const where = buildSearchWhere(options);
+    if (!where) return [];
+
+    const rows = this.db
+      .prepare(
+        `SELECT item_id AS itemId
+         FROM search_index
+         WHERE ${where.clauses.join(" AND ")}
+         ORDER BY bm25(search_index) ASC`
+      )
+      .all(where.params) as Array<{ itemId: string }>;
+
+    return rows.map((row) => row.itemId);
   }
 }
 
@@ -123,4 +134,22 @@ function buildScopeClauses(scopes: string[], params: Record<string, unknown>): s
   }
 
   return clauses;
+}
+
+function buildSearchWhere(options: Omit<SearchOptions, "limit" | "offset">): SearchWhere | null {
+  const match = toFtsMatch(options.query);
+  if (!match) return null;
+
+  const clauses = ["search_index MATCH @match"];
+  const params: Record<string, unknown> = { match };
+
+  if (options.tab && options.tab !== "all") {
+    clauses.push("type = @type");
+    params.type = options.tab;
+  }
+
+  const scopeClauses = buildScopeClauses(options.scopes ?? ["global"], params);
+  if (scopeClauses.length > 0) clauses.push(`(${scopeClauses.join(" OR ")})`);
+
+  return { clauses, params };
 }

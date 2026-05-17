@@ -31,6 +31,9 @@ export interface CountScope {
   count: number;
 }
 
+export type CountItemIdsByTab = Partial<Record<PromptDeskTab, string[]>>;
+export type CountItemIdsByScope = Record<string, string[]>;
+
 type ItemRow = {
   id: string;
   type: ItemType;
@@ -155,14 +158,15 @@ export class ItemsRepository {
     return { items: rows.map(mapItem), total: totalRow.total };
   }
 
-  countByTab(scopes: string[]): Record<string, number> {
+  countByTab(scopes: string[], itemIdsByTab: CountItemIdsByTab = {}): Record<string, number> {
     const tabs: readonly PromptDeskTab[] = TABS;
     const counts: Record<string, number> = {};
     for (const tab of tabs) {
       const where = buildWhere({
         tab,
         scopes,
-        sessionState: "all"
+        sessionState: "all",
+        itemIds: itemIdsByTab[tab]
       });
       const row = this.db.prepare(`SELECT COUNT(*) AS total FROM codex_items ${where.sql}`).get(where.params({})) as {
         total: number;
@@ -172,9 +176,9 @@ export class ItemsRepository {
     return counts;
   }
 
-  countByScope(tab: PromptDeskTab): CountScope[] {
+  countByScope(tab: PromptDeskTab, itemIdsByScope: CountItemIdsByScope = {}): CountScope[] {
     const scopes: CountScope[] = [];
-    const globalCount = this.countFor({ tab, scopes: ["global"] });
+    const globalCount = this.countFor({ tab, scopes: ["global"], itemIds: itemIdsByScope.global });
     scopes.push({ scope: "global", label: "Global", count: globalCount });
 
     const projectRows = this.db
@@ -185,7 +189,11 @@ export class ItemsRepository {
       scopes.push({
         scope: `project:${project.id}`,
         label: project.name,
-        count: this.countFor({ tab, scopes: [`project:${project.id}`] })
+        count: this.countFor({
+          tab,
+          scopes: [`project:${project.id}`],
+          itemIds: itemIdsByScope[`project:${project.id}`]
+        })
       });
     }
 
@@ -225,11 +233,12 @@ export class ItemsRepository {
     return this.findById(existing.id);
   }
 
-  private countFor(options: { tab: PromptDeskTab; scopes: string[] }): number {
+  private countFor(options: { tab: PromptDeskTab; scopes: string[]; itemIds?: string[] }): number {
     const where = buildWhere({
       tab: options.tab,
       scopes: options.scopes,
-      sessionState: "all"
+      sessionState: "all",
+      itemIds: options.itemIds
     });
     const row = this.db.prepare(`SELECT COUNT(*) AS total FROM codex_items ${where.sql}`).get(where.params({})) as {
       total: number;

@@ -6,3 +6,4 @@ export * from "./ItemRow";
 export * from "./ItemTabs";
 export * from "./labels";
 export * from "./sampleData";
+export * from "./tabCounts";

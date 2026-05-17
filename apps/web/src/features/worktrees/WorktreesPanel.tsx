@@ -10,6 +10,8 @@ export interface WorktreesPanelProps {
   loading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
+  emptyTitle?: string;
+  emptyBody?: string;
   className?: string;
 }
 
@@ -18,6 +20,8 @@ export function WorktreesPanel({
   loading = false,
   error = null,
   onRefresh,
+  emptyTitle,
+  emptyBody,
   className
 }: WorktreesPanelProps) {
   const totalWorktrees = projects.reduce((total, project) => total + project.worktrees.length, 0);
@@ -51,8 +55,8 @@ export function WorktreesPanel({
   if (projects.length === 0) {
     return (
       <WorktreesState
-        title="No projects registered"
-        body="Add a project before reviewing its Git worktrees."
+        title={emptyTitle ?? "No projects registered"}
+        body={emptyBody ?? "Add a project before reviewing its Git worktrees."}
         className={className}
       />
     );
