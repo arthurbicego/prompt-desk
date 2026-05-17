@@ -205,6 +205,10 @@ export const projectCreateRequestSchema = z.object({
   name: z.string().min(1).optional()
 });
 
+export const projectFolderSelectionResponseSchema = z.object({
+  path: absolutePathSchema.nullable()
+});
+
 export const projectUpdateRequestSchema = z.object({
   name: z.string().min(1).optional()
 });

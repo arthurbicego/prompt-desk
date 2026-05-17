@@ -14,6 +14,7 @@ import {
   preferencesPatchSchema,
   previewResponseSchema,
   projectCreateRequestSchema,
+  projectFolderSelectionResponseSchema,
   projectSummarySchema,
   projectUpdateRequestSchema,
   restoreRequestSchema,
@@ -148,6 +149,13 @@ export class PromptDeskApiClient {
   async createProject(input: ProjectCreateInput): Promise<z.infer<typeof projectsResponseSchema>> {
     const body = projectCreateRequestSchema.parse(input);
     return this.request("/projects", { method: "POST", body, schema: projectsResponseSchema });
+  }
+
+  async chooseProjectFolder(): Promise<z.infer<typeof projectFolderSelectionResponseSchema>> {
+    return this.request("/projects/choose-folder", {
+      method: "POST",
+      schema: projectFolderSelectionResponseSchema
+    });
   }
 
   async updateProject(id: string, input: ProjectUpdateInput): Promise<z.infer<typeof projectsResponseSchema>> {

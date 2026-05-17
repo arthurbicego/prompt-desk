@@ -217,6 +217,9 @@ export function App() {
       void items.refetch();
     }
   });
+  const chooseProjectFolder = useMutation({
+    mutationFn: () => promptDeskApi.chooseProjectFolder()
+  });
   const updateProject = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => promptDeskApi.updateProject(id, { name }),
     onSuccess: () => {
@@ -624,9 +627,19 @@ export function App() {
       <ProjectManagerDialog
         open={projectsOpen}
         projects={projectRows}
-        busy={createProject.isPending || updateProject.isPending || removeProject.isPending}
+        busy={
+          createProject.isPending ||
+          chooseProjectFolder.isPending ||
+          updateProject.isPending ||
+          removeProject.isPending
+        }
+        choosingPath={chooseProjectFolder.isPending}
         onOpenChange={setProjectsOpen}
         onAddProject={(project) => createProject.mutate(project)}
+        onChooseProjectPath={async () => {
+          const response = await chooseProjectFolder.mutateAsync();
+          return response.path;
+        }}
         onRenameProject={(project, name) => updateProject.mutate({ id: project.id, name })}
         onRemoveProject={(project) => removeProject.mutate(project.id)}
       />

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { projectCreateRequestSchema, projectUpdateRequestSchema } from "@prompt-desk/shared";
 import { projectsService } from "../services/projects/projectsService.js";
+import { chooseProjectFolder } from "../services/projects/folderPicker.js";
 import { validateBody } from "./validate.js";
 
 function routeParam(value: string | string[]): string {
@@ -22,6 +23,14 @@ export function createProjectsRouter(): Router {
     try {
       const project = await projectsService.addProject(req.body);
       res.status(201).json({ project, projects: await projectsService.listProjects() });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/choose-folder", async (_req, res, next) => {
+    try {
+      res.json({ path: await chooseProjectFolder() });
     } catch (error) {
       next(error);
     }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ProjectSummary } from "@prompt-desk/shared";
-import { FolderPlus, GitBranch, Pencil, Trash2 } from "lucide-react";
+import { FolderOpen, FolderPlus, GitBranch, Pencil, Trash2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import {
   Dialog,
@@ -25,8 +25,10 @@ export interface ProjectManagerDialogProps {
   open: boolean;
   projects?: ProjectSummary[];
   busy?: boolean;
+  choosingPath?: boolean;
   onOpenChange: (open: boolean) => void;
   onAddProject?: (project: ProjectCreateDraft) => void;
+  onChooseProjectPath?: () => Promise<string | null>;
   onRenameProject?: (project: ProjectSummary, name: string) => void;
   onRemoveProject?: (project: ProjectSummary) => void;
   className?: string;
@@ -36,14 +38,17 @@ export function ProjectManagerDialog({
   open,
   projects = [],
   busy = false,
+  choosingPath = false,
   onOpenChange,
   onAddProject,
+  onChooseProjectPath,
   onRenameProject,
   onRemoveProject,
   className
 }: ProjectManagerDialogProps) {
   const [path, setPath] = useState("");
   const [name, setName] = useState("");
+  const [chooseError, setChooseError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const canAdd = path.trim().startsWith("/");
@@ -59,6 +64,23 @@ export function ProjectManagerDialog({
     onAddProject?.({ path: path.trim(), name: name.trim() || undefined });
     setPath("");
     setName("");
+    setChooseError(null);
+  }
+
+  async function choosePath() {
+    if (!onChooseProjectPath) {
+      return;
+    }
+
+    setChooseError(null);
+    try {
+      const selectedPath = await onChooseProjectPath();
+      if (selectedPath) {
+        setPath(selectedPath);
+      }
+    } catch (error) {
+      setChooseError(error instanceof Error ? error.message : "Could not open the folder picker.");
+    }
   }
 
   function startRename(project: ProjectSummary) {
@@ -94,15 +116,27 @@ export function ProjectManagerDialog({
               </div>
               <FolderPlus size={18} className="text-[var(--muted)]" aria-hidden="true" />
             </div>
-            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px_auto]">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_220px_auto]">
               <Field label="Path">
                 <Input
                   className="font-mono"
                   value={path}
                   placeholder="/Users/name/workspace/project"
-                  onChange={(event) => setPath(event.target.value)}
+                  onChange={(event) => {
+                    setPath(event.target.value);
+                    setChooseError(null);
+                  }}
                 />
               </Field>
+              <Button
+                className="self-end"
+                variant="secondary"
+                disabled={!onChooseProjectPath || choosingPath || busy}
+                onClick={choosePath}
+              >
+                <FolderOpen size={15} />
+                {choosingPath ? "Choosing" : "Choose"}
+              </Button>
               <Field label="Name">
                 <Input value={name} placeholder="Optional" onChange={(event) => setName(event.target.value)} />
               </Field>
@@ -110,6 +144,7 @@ export function ProjectManagerDialog({
                 Add
               </Button>
             </div>
+            {chooseError ? <p className="text-sm text-[var(--danger)]">{chooseError}</p> : null}
           </section>
 
           <section className="min-h-0 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)]">
