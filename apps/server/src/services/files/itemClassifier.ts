@@ -42,7 +42,7 @@ export async function classifyItemPath(
   if (!isWithinRoot(rootPath, absolutePath)) return null;
 
   const relativePath = toRelativePath(rootPath, absolutePath);
-  if (isIgnoredRelativePath(relativePath)) return null;
+  if (isIgnoredRelativePath(relativePath, context.scope)) return null;
 
   const safety = options.safety ?? (await inspectFileSafety(absolutePath));
   const base = path.basename(absolutePath);

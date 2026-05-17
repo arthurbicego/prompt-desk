@@ -11,6 +11,7 @@ import { classifyItemPath } from "./files/itemClassifier.js";
 import { SearchService } from "./search/searchService.js";
 import { VersioningService } from "./versioning/versioningService.js";
 import { TrashService } from "./trash/trashService.js";
+import { isIgnoredByWatcher, isRelevantWatcherPath } from "./watchers/fileWatchers.js";
 
 const fixturesRoot = path.join(process.cwd(), "tests", "fixtures");
 let tempRoot = "";
@@ -67,6 +68,21 @@ describe("PromptDesk technical behavior", () => {
     expect(projectCandidates).toContain(".agents/skills/imported/SKILL.md");
     expect(projectCandidates).not.toContain("node_modules/pkg/AGENTS.md");
     expect(projectCandidates).not.toContain("dist/AGENTS.md");
+  });
+
+  it("ignores transient Codex global roots in watcher events", async () => {
+    expect(isIgnoredByWatcher(codexHome, path.join(codexHome, ".tmp", "plugins", "browser", "AGENTS.md"), "global")).toBe(
+      true
+    );
+    expect(
+      isIgnoredByWatcher(codexHome, path.join(codexHome, "worktrees", "7dfc", "prompt-desk", "AGENTS.md"), "global")
+    ).toBe(true);
+    expect(
+      isRelevantWatcherPath(codexHome, path.join(codexHome, "worktrees", "7dfc", "prompt-desk", "AGENTS.md"), "global")
+    ).toBe(false);
+    expect(isIgnoredByWatcher(projectPath, path.join(projectPath, "packages", "api", "AGENTS.md"), "project")).toBe(
+      false
+    );
   });
 
   it("enforces file safety before preview and indexing", async () => {
@@ -135,6 +151,42 @@ describe("PromptDesk technical behavior", () => {
       editability: "editable"
     });
     expect(items.findByAbsolutePath(path.join(projectPath, "node_modules/pkg/AGENTS.md"))).toBeNull();
+
+    const ignoredWorktreePath = path.join(codexHome, "worktrees/7dfc/prompt-desk/AGENTS.md");
+    items.upsertDetectedItem({
+      type: "agents",
+      origin: "global",
+      name: "AGENTS.md",
+      absolutePath: ignoredWorktreePath,
+      relativePath: "worktrees/7dfc/prompt-desk/AGENTS.md",
+      projectId: null,
+      projectName: null,
+      pluginName: null,
+      editability: "editable",
+      status: "current",
+      hash: "ignored-worktree-fixture",
+      size: 1,
+      mtimeMs: Date.now(),
+      blockedReason: null,
+      metadata: { safeToIndex: true },
+      safeToRead: true,
+      safeToIndex: true,
+      safeToPreview: true,
+      safeToVersion: true
+    });
+    expect(
+      items
+        .list({
+          tab: "agents",
+          scopes: ["global"],
+          sessionState: "all",
+          limit: 50,
+          offset: 0,
+          sort: "updatedAt",
+          direction: "desc"
+        })
+        .items.some((item) => item.absolutePath === ignoredWorktreePath)
+    ).toBe(false);
 
     const search = new SearchRepository();
     expect(search.search({ query: "global guidance", limit: 10, offset: 0, scopes: ["global"] })).not.toHaveLength(0);

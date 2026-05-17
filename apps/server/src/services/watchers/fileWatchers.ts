@@ -60,7 +60,7 @@ export class FileWatcherService {
     if (existing) return existing.watcher;
 
     const watcher = chokidar.watch(input.rootPath, {
-      ignored: (candidatePath) => isIgnoredByWatcher(input.rootPath, candidatePath),
+      ignored: (candidatePath) => isIgnoredByWatcher(input.rootPath, candidatePath, input.context.scope),
       persistent: true,
       ignoreInitial: false,
       followSymlinks: false,
@@ -120,16 +120,16 @@ export class FileWatcherService {
   }
 }
 
-export function isIgnoredByWatcher(rootPath: string, candidatePath: string): boolean {
+export function isIgnoredByWatcher(rootPath: string, candidatePath: string, scope: "global" | "project"): boolean {
   const relativePath = path.relative(rootPath, candidatePath).split(path.sep).join("/");
   if (!relativePath) return false;
   if (isGitRef(rootPath, candidatePath)) return false;
-  return isIgnoredRelativePath(relativePath);
+  return isIgnoredRelativePath(relativePath, scope);
 }
 
 export function isRelevantWatcherPath(rootPath: string, candidatePath: string, scope: "global" | "project"): boolean {
   const relativePath = path.relative(rootPath, candidatePath).split(path.sep).join("/");
-  if (!relativePath || isIgnoredRelativePath(relativePath)) return false;
+  if (!relativePath || isIgnoredRelativePath(relativePath, scope)) return false;
   if (path.posix.basename(relativePath) === "AGENTS.md") return true;
   if (scope === "project" && (relativePath.startsWith(".codex/") || relativePath.startsWith(".agents/"))) {
     return classifyType(relativePath, scope) !== null;

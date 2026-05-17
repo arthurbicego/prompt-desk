@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type Database from "better-sqlite3";
 import type { CodexItem, ItemType, PromptDeskTab, SessionState } from "@prompt-desk/shared";
+import { GLOBAL_IGNORED_ROOTS } from "../../domain/items/itemPolicy.js";
 import { getDb } from "../connection.js";
 import { parseJson, toJson } from "../json.js";
 import { nowIso } from "../../util/time.js";
@@ -258,6 +259,7 @@ function buildWhere(options: Pick<ItemListOptions, "tab" | "scopes" | "sessionSt
 } {
   const clauses = ["status != 'deleted'"];
   const params: Record<string, unknown> = {};
+  addIgnoredGlobalRootFilter(clauses, params);
 
   if (options.tab !== "all") {
     clauses.push("type = @type");
@@ -286,6 +288,22 @@ function buildWhere(options: Pick<ItemListOptions, "tab" | "scopes" | "sessionSt
 
   const sql = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : "";
   return { sql, params: (extra) => ({ ...params, ...extra }) };
+}
+
+function addIgnoredGlobalRootFilter(clauses: string[], params: Record<string, unknown>): void {
+  const rootChecks = [...GLOBAL_IGNORED_ROOTS].map((root, index) => {
+    const rootKey = `ignoredGlobalRoot${index}`;
+    const prefixKey = `ignoredGlobalPrefix${index}`;
+    params[rootKey] = root;
+    params[prefixKey] = `${root}/`;
+    return `(relative_path = @${rootKey} OR substr(relative_path, 1, length(@${prefixKey})) = @${prefixKey})`;
+  });
+
+  clauses.push(`NOT (
+    project_id IS NULL
+    AND origin IN ('global', 'plugin')
+    AND (${rootChecks.join(" OR ")})
+  )`);
 }
 
 function buildScopeClauses(scopes: string[], params: Record<string, unknown>): string[] {

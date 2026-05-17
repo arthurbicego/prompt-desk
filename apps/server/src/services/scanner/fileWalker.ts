@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { isIgnoredRelativePath } from "../../domain/items/itemPolicy.js";
+import { isIgnoredRelativePath, type ScanScope } from "../../domain/items/itemPolicy.js";
 
 export interface WalkOptions {
   rootPath: string;
   startPath?: string;
+  scope?: ScanScope;
   include?: (absolutePath: string, relativePath: string) => boolean;
 }
 
@@ -24,7 +25,7 @@ export async function* walkFiles(options: WalkOptions): AsyncGenerator<string> {
 
   for (const entry of entries) {
     const relativePath = path.relative(rootPath, entry.path).split(path.sep).join("/");
-    if (isIgnoredRelativePath(relativePath)) continue;
+    if (isIgnoredRelativePath(relativePath, options.scope)) continue;
 
     let stat;
     try {
