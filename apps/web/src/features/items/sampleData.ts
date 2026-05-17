@@ -46,6 +46,27 @@ export const fallbackItems: CodexItem[] = [
     metadata: { mcpServers: 2 }
   },
   {
+    id: "fallback-hook",
+    type: "hook",
+    origin: "global",
+    name: "hooks.json",
+    absolutePath: "/Users/example/.codex/hooks.json",
+    relativePath: "~/.codex/hooks.json",
+    projectId: null,
+    projectName: null,
+    pluginName: null,
+    editability: "editable",
+    status: "current",
+    hash: "4d7f35c1a9e0",
+    size: 980,
+    createdAt: now,
+    detectedAt: now,
+    updatedAt: now,
+    lastVersionAt: now,
+    blockedReason: null,
+    metadata: {}
+  },
+  {
     id: "fallback-session",
     type: "session",
     origin: "global",
