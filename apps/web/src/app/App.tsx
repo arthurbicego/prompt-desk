@@ -24,7 +24,14 @@ import { Sidebar, type SidebarProject, type SidebarScope } from "../components/l
 import { Topbar } from "../components/layout/Topbar";
 import { Badge } from "../components/ui/badge";
 import { SettingsDialog } from "../features/settings";
-import { ProjectManagerDialog, type ProjectCreateDraft } from "../features/projects";
+import {
+  areAllProjectScopesSelected,
+  normalizeProjectScopes,
+  ProjectManagerDialog,
+  projectScopeId,
+  toggleScopeSelection,
+  type ProjectCreateDraft
+} from "../features/projects";
 import { ConfigsMcpSection } from "../features/configs";
 import { SessionsReadOnlyPanel, codexItemToSessionRecord } from "../features/sessions";
 import { ActivityTrail } from "../features/activity";
@@ -179,17 +186,23 @@ export function App() {
       RIGHT_PANEL_MAX_WIDTH
     )
   );
+  const projectRows = projects.data?.projects ?? bootstrap.data?.projects ?? [];
+  const projectIds = useMemo(() => projectRows.map((project) => project.id), [projectRows]);
+  const selectedScopesForQuery = useMemo(
+    () => normalizeProjectScopes(selectedScopes, projectIds),
+    [projectIds, selectedScopes]
+  );
 
   const counts = useCountsQuery({
     tab: activeTab,
     query,
-    scopes: selectedScopes,
+    scopes: selectedScopesForQuery,
     sessionState: "all"
   });
   const items = useItemsQuery({
     tab: activeTab,
     query,
-    scopes: selectedScopes,
+    scopes: selectedScopesForQuery,
     sessionState: "all",
     limit: 150,
     sort: "updatedAt",
@@ -292,24 +305,24 @@ export function App() {
     }
   }, [itemRows, selectedItemId]);
 
-  const projectRows = projects.data?.projects ?? bootstrap.data?.projects ?? [];
   const scopeCounts = counts.data?.scopes ?? [];
   const projectCountTotal = scopeCounts
     .filter((scope) => scope.scope.startsWith("project:"))
     .reduce((total, scope) => total + scope.count, 0);
+  const allProjectsSelected = areAllProjectScopesSelected(selectedScopesForQuery, projectIds);
 
   const sidebarScopes: SidebarScope[] = [
     {
       id: "global",
       label: "Global",
       count: scopeCounts.find((scope) => scope.scope === "global")?.count ?? 0,
-      selected: selectedScopes.includes("global")
+      selected: selectedScopesForQuery.includes("global")
     },
     {
       id: "all-projects",
       label: "All projects",
       count: projectCountTotal,
-      selected: selectedScopes.includes("all-projects")
+      selected: allProjectsSelected
     }
   ];
 
@@ -320,7 +333,7 @@ export function App() {
     branch: project.branch,
     gitState: project.gitState,
     itemCount: scopeCounts.find((scope) => scope.scope === `project:${project.id}`)?.count ?? project.itemCount,
-    selected: selectedScopes.includes(`project:${project.id}`)
+    selected: selectedScopesForQuery.includes(projectScopeId(project.id))
   }));
 
   const actionBusy =
@@ -350,11 +363,12 @@ export function App() {
   }
 
   function toggleScope(scopeId: string) {
+    updateSelectedScopes((current) => toggleScopeSelection(current, scopeId, projectIds));
+  }
+
+  function updateSelectedScopes(getNextScopes: (currentScopes: string[]) => string[]) {
     setSelectedScopes((current) => {
-      const next = current.includes(scopeId)
-        ? current.filter((scope) => scope !== scopeId)
-        : [...current, scopeId];
-      const normalized = next.length > 0 ? next : ["global"];
+      const normalized = normalizeProjectScopes(getNextScopes(current), projectIds);
       updatePreferences.mutate({ selectedScopes: normalized });
       return normalized;
     });
@@ -418,12 +432,7 @@ export function App() {
                 projects={sidebarProjects}
                 onSearchChange={setQuery}
                 onToggleScope={toggleScope}
-                onToggleProject={(projectId) => toggleScope(`project:${projectId}`)}
-                onSelectAllProjects={() => {
-                  const next = ["all-projects"];
-                  setSelectedScopes(next);
-                  updatePreferences.mutate({ selectedScopes: next });
-                }}
+                onToggleProject={(projectId) => toggleScope(projectScopeId(projectId))}
                 onClearScopes={() => {
                   setSelectedScopes(["global"]);
                   updatePreferences.mutate({ selectedScopes: ["global"] });

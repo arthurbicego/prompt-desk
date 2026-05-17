@@ -35,7 +35,6 @@ export interface SidebarProps {
   onSearchChange?: (value: string) => void;
   onToggleScope?: (scopeId: string) => void;
   onToggleProject?: (projectId: string) => void;
-  onSelectAllProjects?: () => void;
   onClearScopes?: () => void;
   onAddProject?: () => void;
   onManageProjects?: () => void;
@@ -59,6 +58,7 @@ function SidebarRow({
           ? "bg-[var(--surface-3)] text-[var(--foreground)]"
           : "text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
       )}
+      aria-pressed={active ? "true" : "false"}
       onClick={onClick}
     >
       {children}
@@ -74,7 +74,6 @@ export function Sidebar({
   onSearchChange,
   onToggleScope,
   onToggleProject,
-  onSelectAllProjects,
   onClearScopes,
   onAddProject,
   onManageProjects
@@ -119,13 +118,6 @@ export function Sidebar({
                 Scope
               </div>
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  className="rounded px-1.5 py-0.5 text-xs text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
-                  onClick={onSelectAllProjects}
-                >
-                  {t("allProjects")}
-                </button>
                 <button
                   type="button"
                   className="rounded px-1.5 py-0.5 text-xs text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
