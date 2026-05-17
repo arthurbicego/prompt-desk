@@ -6,6 +6,23 @@ export interface GitStatus {
   state: GitState;
 }
 
+export interface GitWorktree {
+  path: string;
+  head: string | null;
+  branch: string | null;
+  isBare: boolean;
+  isDetached: boolean;
+  isLocked: boolean;
+  lockedReason: string | null;
+  isPrunable: boolean;
+  prunableReason: string | null;
+}
+
+export interface GitWorktreeList {
+  worktrees: GitWorktree[];
+  error: string | null;
+}
+
 interface CommandResult {
   code: number | null;
   stdout: string;
@@ -52,8 +69,8 @@ function runCommand(command: string, args: string[], timeoutMs = 5000): Promise<
   });
 }
 
-async function git(repoPath: string, args: string[]): Promise<CommandResult> {
-  return runCommand("git", ["-C", repoPath, ...args]);
+async function git(repoPath: string, args: string[], timeoutMs?: number): Promise<CommandResult> {
+  return runCommand("git", ["-C", repoPath, ...args], timeoutMs);
 }
 
 export class GitService {
@@ -86,6 +103,102 @@ export class GitService {
       state: statusResult.stdout.trim().length > 0 ? "dirty" : "clean"
     };
   }
+
+  async listWorktrees(repoPath: string): Promise<GitWorktreeList> {
+    const insideWorkTree = await git(repoPath, ["rev-parse", "--is-inside-work-tree"]);
+    if (insideWorkTree.code === null) {
+      return { worktrees: [], error: insideWorkTree.stderr || "Git command timed out." };
+    }
+    if (insideWorkTree.code !== 0 || insideWorkTree.stdout.trim() !== "true") {
+      return { worktrees: [], error: null };
+    }
+
+    const result = await git(repoPath, ["worktree", "list", "--porcelain"], 8000);
+    if (result.code === null) {
+      return { worktrees: [], error: result.stderr || "Git worktree list timed out." };
+    }
+    if (result.code !== 0) {
+      return { worktrees: [], error: result.stderr.trim() || "Could not list Git worktrees." };
+    }
+
+    return { worktrees: parseWorktreePorcelain(result.stdout), error: null };
+  }
 }
 
 export const gitService = new GitService();
+
+export function parseWorktreePorcelain(output: string): GitWorktree[] {
+  return output
+    .split(/\n{2,}/)
+    .map((block) => parseWorktreeBlock(block))
+    .filter((worktree): worktree is GitWorktree => worktree !== null);
+}
+
+function parseWorktreeBlock(block: string): GitWorktree | null {
+  const lines = block
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter(Boolean);
+  let worktreePath: string | null = null;
+  let head: string | null = null;
+  let branch: string | null = null;
+  let isBare = false;
+  let isDetached = false;
+  let isLocked = false;
+  let lockedReason: string | null = null;
+  let isPrunable = false;
+  let prunableReason: string | null = null;
+
+  for (const line of lines) {
+    const { label, value } = splitPorcelainLine(line);
+    if (label === "worktree") {
+      worktreePath = value;
+    } else if (label === "HEAD") {
+      head = value;
+    } else if (label === "branch") {
+      branch = shortRef(value);
+    } else if (label === "bare") {
+      isBare = true;
+    } else if (label === "detached") {
+      isDetached = true;
+    } else if (label === "locked") {
+      isLocked = true;
+      lockedReason = value || null;
+    } else if (label === "prunable") {
+      isPrunable = true;
+      prunableReason = value || null;
+    }
+  }
+
+  if (!worktreePath) {
+    return null;
+  }
+
+  return {
+    path: worktreePath,
+    head,
+    branch,
+    isBare,
+    isDetached,
+    isLocked,
+    lockedReason,
+    isPrunable,
+    prunableReason
+  };
+}
+
+function splitPorcelainLine(line: string): { label: string; value: string } {
+  const separator = line.indexOf(" ");
+  if (separator === -1) {
+    return { label: line, value: "" };
+  }
+
+  return {
+    label: line.slice(0, separator),
+    value: line.slice(separator + 1)
+  };
+}
+
+function shortRef(ref: string): string {
+  return ref.replace(/^refs\/heads\//, "").replace(/^refs\/remotes\//, "");
+}

@@ -5,6 +5,7 @@ export const promptDeskQueryKeys = {
   bootstrap: () => [...promptDeskQueryKeys.all, "bootstrap"] as const,
   preferences: () => [...promptDeskQueryKeys.all, "preferences"] as const,
   projects: () => [...promptDeskQueryKeys.all, "projects"] as const,
+  worktrees: () => [...promptDeskQueryKeys.all, "worktrees"] as const,
   items: (input: ItemsQueryInput) => [...promptDeskQueryKeys.all, "items", input] as const,
   counts: (input: Pick<ItemsQueryInput, "tab" | "query" | "scopes" | "sessionState">) =>
     [...promptDeskQueryKeys.all, "counts", input] as const,

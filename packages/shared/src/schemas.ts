@@ -45,6 +45,29 @@ export const projectSummarySchema = z.object({
   itemCount: z.number().int().nonnegative()
 });
 
+export const worktreeSummarySchema = z.object({
+  id: idSchema,
+  projectId: idSchema,
+  projectName: z.string(),
+  projectPath: absolutePathSchema,
+  path: absolutePathSchema,
+  branch: z.string().nullable(),
+  head: z.string().nullable(),
+  isCurrentProject: z.boolean(),
+  isBare: z.boolean(),
+  isDetached: z.boolean(),
+  isLocked: z.boolean(),
+  lockedReason: z.string().nullable(),
+  isPrunable: z.boolean(),
+  prunableReason: z.string().nullable()
+});
+
+export const projectWorktreesSchema = z.object({
+  project: projectSummarySchema,
+  worktrees: z.array(worktreeSummarySchema),
+  error: z.string().nullable()
+});
+
 export const codexItemSchema = z.object({
   id: idSchema,
   type: itemTypeSchema,

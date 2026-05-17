@@ -20,6 +20,7 @@ import {
   restoreRequestSchema,
   trashResponseSchema,
   versionsResponseSchema,
+  worktreesResponseSchema,
   type AppPreferences,
   type BootstrapResponse,
   type CountsResponse,
@@ -31,7 +32,8 @@ import {
   type RestoreConflictMode,
   type SessionState,
   type TrashResponse,
-  type VersionsResponse
+  type VersionsResponse,
+  type WorktreesResponse
 } from "@prompt-desk/shared";
 import { PromptDeskParseError, toApiError } from "./errors";
 
@@ -144,6 +146,10 @@ export class PromptDeskApiClient {
 
   async projects(): Promise<z.infer<typeof projectsResponseSchema>> {
     return this.request("/projects", { schema: projectsResponseSchema });
+  }
+
+  async worktrees(): Promise<WorktreesResponse> {
+    return this.request("/projects/worktrees", { schema: worktreesResponseSchema });
   }
 
   async createProject(input: ProjectCreateInput): Promise<z.infer<typeof projectsResponseSchema>> {

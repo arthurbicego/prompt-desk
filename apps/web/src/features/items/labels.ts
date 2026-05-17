@@ -11,6 +11,7 @@ export const tabLabels: Record<PromptDeskTab, string> = {
   automation: "Automations",
   session: "Sessions",
   activity: "Activity",
+  worktree: "Worktrees",
   all: "All"
 };
 

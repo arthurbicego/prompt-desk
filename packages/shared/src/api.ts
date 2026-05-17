@@ -8,6 +8,7 @@ import {
   itemsResponseSchema,
   mcpServerSchema,
   mcpToolSchema,
+  projectWorktreesSchema,
   trashItemSchema
 } from "./schemas.js";
 
@@ -38,6 +39,10 @@ export const trashResponseSchema = z.object({
   items: z.array(trashItemSchema)
 });
 
+export const worktreesResponseSchema = z.object({
+  projects: z.array(projectWorktreesSchema)
+});
+
 export const previewResponseSchema = z.object({
   preview: itemPreviewSchema
 });
@@ -49,5 +54,6 @@ export type VersionsResponse = z.infer<typeof versionsResponseSchema>;
 export type McpServersResponse = z.infer<typeof mcpServersResponseSchema>;
 export type EventsResponse = z.infer<typeof eventsResponseSchema>;
 export type TrashResponse = z.infer<typeof trashResponseSchema>;
+export type WorktreesResponse = z.infer<typeof worktreesResponseSchema>;
 export type PreviewResponse = z.infer<typeof previewResponseSchema>;
 export type ApiError = z.infer<typeof apiErrorSchema>;

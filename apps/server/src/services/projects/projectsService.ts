@@ -1,7 +1,7 @@
-import type { ProjectSummary } from "@prompt-desk/shared";
+import type { ProjectSummary, ProjectWorktrees, WorktreeSummary } from "@prompt-desk/shared";
 import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { projectCreateRequestSchema, projectUpdateRequestSchema } from "@prompt-desk/shared";
 import { projectsRepository } from "../../db/repositories/projectsRepository.js";
 import { eventBus } from "../../events/eventBus.js";
@@ -30,6 +30,18 @@ function defaultProjectName(projectPath: string): string {
   return path.basename(projectPath) || projectPath;
 }
 
+function stableWorktreeId(projectId: string, worktreePath: string): string {
+  return `worktree_${createHash("sha256").update(`${projectId}:${worktreePath}`).digest("hex").slice(0, 24)}`;
+}
+
+function realPathOrResolved(candidate: string): string {
+  try {
+    return fs.realpathSync(candidate);
+  } catch {
+    return path.resolve(candidate);
+  }
+}
+
 export class ProjectsService {
   async listProjects(): Promise<ProjectSummary[]> {
     const projects = projectsRepository.listActive();
@@ -40,6 +52,38 @@ export class ProjectsService {
       })
     );
     return projectsRepository.listActive();
+  }
+
+  async listProjectWorktrees(): Promise<ProjectWorktrees[]> {
+    const projects = await this.listProjects();
+    return Promise.all(
+      projects.map(async (project) => {
+        const result = await gitService.listWorktrees(project.path);
+        const currentProjectPath = realPathOrResolved(project.path);
+        return {
+          project,
+          worktrees: result.worktrees.map(
+            (worktree): WorktreeSummary => ({
+              id: stableWorktreeId(project.id, worktree.path),
+              projectId: project.id,
+              projectName: project.name,
+              projectPath: project.path,
+              path: worktree.path,
+              branch: worktree.branch,
+              head: worktree.head,
+              isCurrentProject: realPathOrResolved(worktree.path) === currentProjectPath,
+              isBare: worktree.isBare,
+              isDetached: worktree.isDetached,
+              isLocked: worktree.isLocked,
+              lockedReason: worktree.lockedReason,
+              isPrunable: worktree.isPrunable,
+              prunableReason: worktree.prunableReason
+            })
+          ),
+          error: result.error
+        };
+      })
+    );
   }
 
   async addProject(input: unknown): Promise<ProjectSummary> {

@@ -19,6 +19,14 @@ export function createProjectsRouter(): Router {
     }
   });
 
+  router.get("/worktrees", async (_req, res, next) => {
+    try {
+      res.json({ projects: await projectsService.listProjectWorktrees() });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post("/", validateBody(projectCreateRequestSchema), async (req, res, next) => {
     try {
       const project = await projectsService.addProject(req.body);

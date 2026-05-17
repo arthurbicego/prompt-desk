@@ -11,7 +11,8 @@ import {
   codexItemSchema,
   restoreRequestSchema,
   sseEnvelopeSchema,
-  trashItemSchema
+  trashItemSchema,
+  worktreesResponseSchema
 } from "@prompt-desk/shared";
 
 const now = "2026-05-15T12:00:00.000Z";
@@ -47,8 +48,8 @@ function codexItem(overrides: Partial<unknown> = {}) {
 }
 
 describe("shared PromptDesk contracts", () => {
-  it("keeps item tabs aligned with item types plus All", () => {
-    expect(TABS).toEqual([...ITEM_TYPES, "all"]);
+  it("keeps item tabs aligned with item types plus Worktrees and All", () => {
+    expect(TABS).toEqual([...ITEM_TYPES, "worktree", "all"]);
     expect(ITEM_ORIGINS).toEqual(["global", "project", "plugin", "internal"]);
     expect(EDITABILITY_STATES).toContain("read-only");
     expect(APP_EVENT_TYPES).toContain("trash-restored");
@@ -136,6 +137,44 @@ describe("shared PromptDesk contracts", () => {
         createdAt: now
       }).basename
     ).toBe("AGENTS.md");
+
+    expect(
+      worktreesResponseSchema.parse({
+        projects: [
+          {
+            project: {
+              id: "project_fixture",
+              name: "Fixture",
+              path: "/tmp/project-fixture",
+              branch: "main",
+              gitState: "clean",
+              lastScannedAt: now,
+              createdAt: now,
+              itemCount: 3
+            },
+            worktrees: [
+              {
+                id: "worktree_fixture",
+                projectId: "project_fixture",
+                projectName: "Fixture",
+                projectPath: "/tmp/project-fixture",
+                path: "/tmp/project-fixture-feature",
+                branch: "feature/worktree-list",
+                head: "abc123",
+                isCurrentProject: false,
+                isBare: false,
+                isDetached: false,
+                isLocked: false,
+                lockedReason: null,
+                isPrunable: false,
+                prunableReason: null
+              }
+            ],
+            error: null
+          }
+        ]
+      }).projects[0].worktrees[0].branch
+    ).toBe("feature/worktree-list");
   });
 
   it("rejects relative paths and invalid restore modes", () => {

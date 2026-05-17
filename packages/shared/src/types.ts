@@ -96,6 +96,7 @@ export const TABS = [
   "automation",
   "session",
   "activity",
+  "worktree",
   "all"
 ] as const;
 export type PromptDeskTab = (typeof TABS)[number];
@@ -130,6 +131,29 @@ export interface ProjectSummary {
   lastScannedAt: string | null;
   createdAt: string;
   itemCount: number;
+}
+
+export interface WorktreeSummary {
+  id: string;
+  projectId: string;
+  projectName: string;
+  projectPath: string;
+  path: string;
+  branch: string | null;
+  head: string | null;
+  isCurrentProject: boolean;
+  isBare: boolean;
+  isDetached: boolean;
+  isLocked: boolean;
+  lockedReason: string | null;
+  isPrunable: boolean;
+  prunableReason: string | null;
+}
+
+export interface ProjectWorktrees {
+  project: ProjectSummary;
+  worktrees: WorktreeSummary[];
+  error: string | null;
 }
 
 export interface CodexItem {
