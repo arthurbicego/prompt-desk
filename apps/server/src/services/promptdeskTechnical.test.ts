@@ -52,11 +52,13 @@ describe("PromptDesk technical behavior", () => {
     );
     expect(globalCandidates).toContain("AGENTS.md");
     expect(globalCandidates).toContain("skills/team-context/SKILL.md");
-    expect(globalCandidates).toContain("plugins/cache/browser/skills/browser/SKILL.md");
     expect(globalCandidates).toContain("sessions/2026/05/15/session-active.jsonl");
     expect(globalCandidates).toContain("archived_sessions/2026/session-archived.jsonl");
     expect(globalCandidates).toContain("history.jsonl");
     expect(globalCandidates).toContain("auth.json");
+    expect(globalCandidates).not.toContain("plugins/cache/browser/.codex-plugin/plugin.json");
+    expect(globalCandidates).not.toContain("plugins/cache/browser/skills/browser/SKILL.md");
+    expect(globalCandidates).not.toContain("plugins/cache/browser/skills/browser/agents/navigator.yaml");
 
     const projectCandidates = [...(await collectProjectCandidates(projectPath))].map((filePath) =>
       path.relative(projectPath, filePath).split(path.sep).join("/")
@@ -79,6 +81,16 @@ describe("PromptDesk technical behavior", () => {
     ).toBe(true);
     expect(
       isRelevantWatcherPath(codexHome, path.join(codexHome, "worktrees", "7dfc", "prompt-desk", "AGENTS.md"), "global")
+    ).toBe(false);
+    expect(
+      isIgnoredByWatcher(codexHome, path.join(codexHome, "plugins", "cache", "browser", "AGENTS.md"), "global")
+    ).toBe(true);
+    expect(
+      isRelevantWatcherPath(
+        codexHome,
+        path.join(codexHome, "plugins", "cache", "browser", "skills", "browser", "SKILL.md"),
+        "global"
+      )
     ).toBe(false);
     expect(isIgnoredByWatcher(projectPath, path.join(projectPath, "packages", "api", "AGENTS.md"), "project")).toBe(
       false
@@ -135,11 +147,7 @@ describe("PromptDesk technical behavior", () => {
       type: "skill",
       editability: "read-only"
     });
-    expect(items.findByAbsolutePath(path.join(codexHome, "plugins/cache/browser/skills/browser/SKILL.md"))).toMatchObject({
-      origin: "plugin",
-      pluginName: "browser",
-      editability: "read-only"
-    });
+    expect(items.findByAbsolutePath(path.join(codexHome, "plugins/cache/browser/skills/browser/SKILL.md"))).toBeNull();
     expect(items.findByAbsolutePath(path.join(codexHome, "auth.json"))).toMatchObject({
       editability: "blocked",
       status: "blocked"
@@ -186,6 +194,42 @@ describe("PromptDesk technical behavior", () => {
           direction: "desc"
         })
         .items.some((item) => item.absolutePath === ignoredWorktreePath)
+    ).toBe(false);
+
+    const ignoredPluginCachePath = path.join(codexHome, "plugins/cache/browser/skills/browser/SKILL.md");
+    items.upsertDetectedItem({
+      type: "skill",
+      origin: "plugin",
+      name: "browser",
+      absolutePath: ignoredPluginCachePath,
+      relativePath: "plugins/cache/browser/skills/browser/SKILL.md",
+      projectId: null,
+      projectName: null,
+      pluginName: "browser",
+      editability: "read-only",
+      status: "current",
+      hash: "ignored-plugin-cache-fixture",
+      size: 1,
+      mtimeMs: Date.now(),
+      blockedReason: null,
+      metadata: { safeToIndex: true },
+      safeToRead: true,
+      safeToIndex: true,
+      safeToPreview: true,
+      safeToVersion: false
+    });
+    expect(
+      items
+        .list({
+          tab: "skill",
+          scopes: ["global"],
+          sessionState: "all",
+          limit: 50,
+          offset: 0,
+          sort: "updatedAt",
+          direction: "desc"
+        })
+        .items.some((item) => item.absolutePath === ignoredPluginCachePath)
     ).toBe(false);
 
     const search = new SearchRepository();

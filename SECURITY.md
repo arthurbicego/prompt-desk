@@ -25,7 +25,8 @@ PromptDesk should:
 - Block secret-looking files and raw secret content from preview, indexing, versioning, opening, restore, and delete flows.
 - Redact MCP environment values, headers, tokens, authorization values, and credential-like data.
 - Require explicit confirmation before MCP inspection starts configured commands.
-- Treat sessions, activity, plugin cache content, and unknown internal state as read-only unless a safe behavior is explicitly implemented and tested.
+- Treat sessions, activity, and unknown internal state as read-only unless a safe behavior is explicitly implemented and tested.
+- Ignore plugin cache content in scanners, watchers, and item lists unless a safe behavior is explicitly implemented and tested.
 
 ## Out of Scope
 

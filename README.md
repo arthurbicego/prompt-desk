@@ -28,7 +28,7 @@ Important safety constraints:
 - MCP inspection is manual and requires explicit confirmation because it may start commands configured on disk.
 - Raw MCP environment values, headers, bearer tokens, and secret-looking values are redacted before they reach the UI or persisted metadata.
 - Sessions and Codex activity files are read-only in V1.
-- Plugin cache content is read-only by default.
+- Plugin cache content is ignored by default.
 
 ## Requirements
 

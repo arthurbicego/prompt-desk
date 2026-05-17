@@ -20,7 +20,6 @@ export interface ClassifyItemOptions {
 const GLOBAL_READ_ONLY_PREFIXES = [
   "sessions/",
   "archived_sessions/",
-  "plugins/cache/",
   "cache/",
   "vendor_imports/",
   "skills/.system/",
@@ -153,7 +152,7 @@ function isNeverIndexed(relativePath: string): boolean {
 }
 
 function isSkillPath(relativePath: string, scope: "global" | "project"): boolean {
-  if (scope === "global") return relativePath.startsWith("skills/") || isPluginCacheSkillPath(relativePath);
+  if (scope === "global") return relativePath.startsWith("skills/");
   return PROJECT_SKILL_ROOTS.some((root) => relativePath.startsWith(root));
 }
 
@@ -161,17 +160,14 @@ function isAgentPath(relativePath: string, scope: "global" | "project"): boolean
   const normalized = relativePath.replaceAll("\\", "/");
   if (!normalized.endsWith(".yaml") && !normalized.endsWith(".yml")) return false;
   if (scope === "global") {
-    return (
-      (normalized.startsWith("skills/") && normalized.includes("/agents/")) ||
-      (normalized.startsWith("plugins/cache/") && normalized.includes("/skills/") && normalized.includes("/agents/"))
-    );
+    return normalized.startsWith("skills/") && normalized.includes("/agents/");
   }
   return PROJECT_SKILL_ROOTS.some((root) => normalized.startsWith(root) && normalized.includes("/agents/"));
 }
 
 function isPluginPath(relativePath: string, scope: "global" | "project"): boolean {
   const normalized = relativePath.replaceAll("\\", "/");
-  if (scope === "global") return normalized.startsWith("plugins/");
+  if (scope === "global") return normalized.startsWith("plugins/") && !normalized.startsWith("plugins/cache/");
   return normalized.startsWith(".codex/plugins/");
 }
 
@@ -200,11 +196,6 @@ function isSessionPath(relativePath: string): boolean {
     normalized.startsWith("archived_sessions/") ||
     normalized === "session_index.jsonl"
   );
-}
-
-function isPluginCacheSkillPath(relativePath: string): boolean {
-  const normalized = relativePath.replaceAll("\\", "/");
-  return normalized.startsWith("plugins/cache/") && normalized.includes("/skills/") && normalized.endsWith("/SKILL.md");
 }
 
 function isKnownBlockedPath(relativePath: string, scope: "global" | "project"): boolean {

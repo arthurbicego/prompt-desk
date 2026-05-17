@@ -45,7 +45,6 @@ describe("item classifier", () => {
     const session = await writeFixture(root, "sessions/2026/session.jsonl", '{"role":"user"}\n');
     const history = await writeFixture(root, "history.jsonl", '{"prompt":"hello"}\n');
     const systemSkill = await writeFixture(root, "skills/.system/base/SKILL.md", "# System\n");
-    const pluginSkill = await writeFixture(root, "plugins/cache/browser/skills/browser/SKILL.md", "# Plugin\n");
 
     await expect(classifyItemPath(auth, { scope: "global", rootPath: root })).resolves.toMatchObject({
       type: "config",
@@ -67,27 +66,35 @@ describe("item classifier", () => {
       type: "skill",
       editability: "read-only"
     });
-    await expect(classifyItemPath(pluginSkill, { scope: "global", rootPath: root })).resolves.toMatchObject({
-      type: "skill",
-      origin: "plugin",
-      editability: "read-only",
-      pluginName: "browser"
-    });
   });
 
-  it("ignores transient global roots before item classification", async () => {
+  it("ignores transient global roots and plugin cache before item classification", async () => {
     const root = await makeTempRoot();
     const tmpAgents = await writeFixture(root, ".tmp/plugins/cache/browser/AGENTS.md", "# Temporary plugin\n");
     const tmpSkill = await writeFixture(root, ".tmp/plugins/cache/browser/skills/browser/SKILL.md", "# Temporary skill\n");
     const worktreeAgents = await writeFixture(root, "worktrees/7dfc/prompt-desk/AGENTS.md", "# Worktree\n");
     const worktreeSkill = await writeFixture(root, "worktrees/7dfc/prompt-desk/.codex/skills/local/SKILL.md", "# Local\n");
     const cacheAgents = await writeFixture(root, "cache/copied/AGENTS.md", "# Cache\n");
+    const pluginSkill = await writeFixture(root, "plugins/cache/browser/skills/browser/SKILL.md", "# Plugin\n");
+    const pluginAgent = await writeFixture(root, "plugins/cache/browser/skills/browser/agents/navigator.yaml", "name: navigator\n");
+    const pluginManifest = await writeFixture(root, "plugins/cache/browser/.codex-plugin/plugin.json", '{"name":"browser"}\n');
 
     expect(isIgnoredRelativePath(".tmp/plugins/cache/browser/skills/browser/SKILL.md", "global")).toBe(true);
     expect(isIgnoredRelativePath("worktrees/7dfc/prompt-desk/.codex/skills/local/SKILL.md", "global")).toBe(true);
-    expect(isIgnoredRelativePath("plugins/cache/browser/skills/browser/SKILL.md", "global")).toBe(false);
+    expect(isIgnoredRelativePath("plugins/cache/browser/skills/browser/SKILL.md", "global")).toBe(true);
+    expect(isIgnoredRelativePath("plugins/cache/browser/.codex-plugin/plugin.json", "global")).toBe(true);
+    expect(isIgnoredRelativePath("plugins/local/plugin.json", "global")).toBe(false);
 
-    for (const absolutePath of [tmpAgents, tmpSkill, worktreeAgents, worktreeSkill, cacheAgents]) {
+    for (const absolutePath of [
+      tmpAgents,
+      tmpSkill,
+      worktreeAgents,
+      worktreeSkill,
+      cacheAgents,
+      pluginSkill,
+      pluginAgent,
+      pluginManifest
+    ]) {
       await expect(classifyItemPath(absolutePath, { scope: "global", rootPath: root })).resolves.toBeNull();
     }
   });
