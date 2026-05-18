@@ -32,7 +32,7 @@ Important safety constraints:
 
 ## Requirements
 
-- Node.js `^20.19.0` or `>=22.12.0`
+- Node.js `^25.0.0`
 - npm `>=10`
 - VS Code command-line launcher (`code`) for open, compare, and temporary version workflows
 
@@ -41,7 +41,8 @@ Important safety constraints:
 Install dependencies:
 
 ```sh
-npm ci
+nvm use
+npm install
 ```
 
 Run the web app and local API together:
