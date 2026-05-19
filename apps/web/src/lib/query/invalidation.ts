@@ -7,10 +7,16 @@ export function invalidateForPromptDeskEvent(queryClient: QueryClient, event: Ap
 
   switch (event.type) {
     case "backend-status":
-    case "watcher-status":
     case "maintenance":
     case "error":
       void queryClient.invalidateQueries({ queryKey: promptDeskQueryKeys.bootstrap() });
+      break;
+    case "watcher-status":
+      void queryClient.invalidateQueries({ queryKey: promptDeskQueryKeys.bootstrap() });
+      void queryClient.invalidateQueries({ queryKey: promptDeskQueryKeys.projects() });
+      void queryClient.invalidateQueries({ queryKey: promptDeskQueryKeys.worktrees() });
+      void queryClient.invalidateQueries({ queryKey: ["prompt-desk", "counts"] });
+      void queryClient.invalidateQueries({ queryKey: ["prompt-desk", "items"] });
       break;
     case "project-added":
     case "project-updated":
