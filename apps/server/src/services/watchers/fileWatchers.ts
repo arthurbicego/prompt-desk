@@ -22,8 +22,26 @@ export interface FileWatcherHooks {
 interface WatchedRoot {
   rootPath: string;
   context: ClassificationContext;
+  watchPaths: string[];
   watcher: FSWatcher;
 }
+
+const GLOBAL_WATCH_RELATIVE_PATHS = [
+  "AGENTS.md",
+  "config.toml",
+  "hooks.json",
+  "auth.json",
+  "session_index.jsonl",
+  "history.jsonl",
+  "skills",
+  "plugins",
+  "memories",
+  "automations",
+  "sessions",
+  "archived_sessions"
+];
+
+const PROJECT_WATCH_RELATIVE_PATHS = ["AGENTS.md", ".codex", ".agents", ".git/HEAD", ".git/refs"];
 
 export class FileWatcherService {
   private readonly watchedRoots = new Map<string, WatchedRoot>();
@@ -37,6 +55,7 @@ export class FileWatcherService {
     const rootPath = path.resolve(codexHome);
     return this.watchRoot({
       rootPath,
+      watchPaths: buildWatchPaths(rootPath, GLOBAL_WATCH_RELATIVE_PATHS),
       context: { scope: "global", rootPath }
     });
   }
@@ -45,6 +64,7 @@ export class FileWatcherService {
     const rootPath = path.resolve(project.path);
     return this.watchRoot({
       rootPath,
+      watchPaths: buildWatchPaths(rootPath, PROJECT_WATCH_RELATIVE_PATHS),
       context: { scope: "project", rootPath, projectId: project.id, projectName: project.name }
     });
   }
@@ -55,14 +75,14 @@ export class FileWatcherService {
     await Promise.all(watchers);
   }
 
-  private watchRoot(input: { rootPath: string; context: ClassificationContext }): FSWatcher {
+  private watchRoot(input: { rootPath: string; watchPaths: string[]; context: ClassificationContext }): FSWatcher {
     const existing = this.watchedRoots.get(input.rootPath);
     if (existing) return existing.watcher;
 
-    const watcher = chokidar.watch(input.rootPath, {
+    const watcher = chokidar.watch(input.watchPaths, {
       ignored: (candidatePath) => isIgnoredByWatcher(input.rootPath, candidatePath, input.context.scope),
       persistent: true,
-      ignoreInitial: false,
+      ignoreInitial: true,
       followSymlinks: false,
       awaitWriteFinish: {
         stabilityThreshold: 500,
@@ -118,6 +138,10 @@ export class FileWatcherService {
   private async emit(event: WatcherEvent): Promise<void> {
     await this.hooks.onEvent?.(event);
   }
+}
+
+export function buildWatchPaths(rootPath: string, relativePaths: string[]): string[] {
+  return relativePaths.map((relativePath) => path.join(rootPath, relativePath));
 }
 
 export function isIgnoredByWatcher(rootPath: string, candidatePath: string, scope: "global" | "project"): boolean {

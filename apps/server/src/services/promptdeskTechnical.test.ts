@@ -11,7 +11,7 @@ import { classifyItemPath } from "./files/itemClassifier.js";
 import { SearchService } from "./search/searchService.js";
 import { VersioningService } from "./versioning/versioningService.js";
 import { TrashService } from "./trash/trashService.js";
-import { isIgnoredByWatcher, isRelevantWatcherPath } from "./watchers/fileWatchers.js";
+import { buildWatchPaths, isIgnoredByWatcher, isRelevantWatcherPath } from "./watchers/fileWatchers.js";
 
 const fixturesRoot = path.join(process.cwd(), "tests", "fixtures");
 let tempRoot = "";
@@ -97,6 +97,14 @@ describe("PromptDesk technical behavior", () => {
     expect(isIgnoredByWatcher(projectPath, path.join(projectPath, "packages", "api", "AGENTS.md"), "project")).toBe(
       false
     );
+  });
+
+  it("builds narrow project watcher paths for Codex-owned project files", () => {
+    expect(
+      buildWatchPaths(projectPath, ["AGENTS.md", ".codex", ".agents", ".git/HEAD", ".git/refs"]).map((filePath) =>
+        path.relative(projectPath, filePath).split(path.sep).join("/")
+      )
+    ).toEqual(["AGENTS.md", ".codex", ".agents", ".git/HEAD", ".git/refs"]);
   });
 
   it("enforces file safety before preview and indexing", async () => {
