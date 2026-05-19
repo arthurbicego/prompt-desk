@@ -29,12 +29,19 @@ interface CommandResult {
   stderr: string;
 }
 
-function runCommand(command: string, args: string[], timeoutMs = 5000): Promise<CommandResult> {
+export function runCommand(command: string, args: string[], timeoutMs = 5000): Promise<CommandResult> {
   return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      shell: false,
-      windowsHide: true
-    });
+    let child: ReturnType<typeof spawn>;
+    try {
+      child = spawn(command, args, {
+        shell: false,
+        windowsHide: true
+      });
+    } catch (error) {
+      resolve({ code: null, stdout: "", stderr: error instanceof Error ? error.message : String(error) });
+      return;
+    }
+
     let stdout = "";
     let stderr = "";
     let settled = false;
